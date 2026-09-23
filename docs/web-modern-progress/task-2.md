@@ -21,22 +21,25 @@
 
 ## 当前进展
 - 已按 A5 新增 SWT-free `PipelineEditor`，实现 `moveTransforms`，支持批量移动、边界裁剪、重复/未知节点过滤，并记录单个 `PositionTransform` undo action。
-- 本轮继续实现 `addHop` / `deleteHop`：校验节点存在、自连接和重复 hop，调用 `PipelineMeta` 原生图 API，并分别记录 `NewHop` / `DeleteHop` undo action；已补单元测试。
-- 上一轮 Code Actions run `35867287340` 已成功完成。
+- 已实现 `addHop` / `deleteHop`，校验节点存在、自连接和重复 hop，并记录 `NewPipelineHop` / `DeletePipelineHop` undo action。
+- 本轮继续实现 `setHopEnabled` / `flipHop`：复用 `PipelineHopMeta` 原生语义，拒绝 no-op、未知 hop 和反向边冲突；变更前后均 clone 快照并记录 `ChangePipelineHop` undo action，避免 undo 记录被后续原地修改污染。
+- 已补 hop mutation 单元测试，并修正测试中 ActionType 为当前源码实际枚举名。
 
 ## 下一步
-- 处理本轮 hop commands 的 Code Actions；通过后继续 A5 的 hop enabled/flip 与 transform 删除等紧邻命令语义。
-- 随后实现架构要求的 SWT-free undo/redo 应用层；`web/api` 骨架落地后再接 DocumentResource，不越界代替任务 1。
+- 等待本轮提交的 Actions 验证；若失败先修复真实原因。
+- 继续 A5 的 transform 删除等紧邻命令语义，随后实现架构 R10 要求的 SWT-free undo/redo 应用层。
+- `web/api` 骨架落地后再接 DocumentResource，不越界代替任务 1。
 
 ## 最近提交
-- `4d903a28 test: cover headless pipeline hop commands`。
-- `40269b13 feat: add headless pipeline hop commands`。
-- `346add6d feat: add headless pipeline move command`。
+- `a47c93fd fix: snapshot pipeline hop change undo state`。
+- `be5b68a9 fix: use pipeline hop undo action types`。
+- `3a95d3b5 test: cover headless pipeline hop mutations`。
+- `9711c334 feat: add headless pipeline hop mutations`。
 
 ## Actions
 - `346add6d` 的 Hop PR Build (Code) run `35867287340`：success。
-- `4d903a28` 已由 push 触发新一轮 Actions，等待结果。
-- 本机 Maven wrapper 默认缓存无写权限；改用临时 Maven home 后又发现 `JAVA_HOME` 未配置，因此仍以 GitHub Actions 为权威验证。
+- 本轮新提交已 push；当前 commit status 尚未返回检查结果，后续轮次继续跟踪。
+- 本机 Maven wrapper 默认缓存无写权限且 `JAVA_HOME` 未配置，因此仍以 GitHub Actions 为权威验证。
 
 ## 架构文档对应章节
 - 1.2：`PipelineMeta`/`WorkflowMeta`、模型编辑 API、`AbstractMeta`/`ChangeAction`、SVG renderer。
