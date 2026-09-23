@@ -506,6 +506,7 @@ public abstract class AbstractMeta
     if (ta.getType() == ChangeAction.ActionType.None) {
       return;
     }
+    ta.setNextAlso(nextAlso);
     undo.add(ta);
     undoPosition++;
 

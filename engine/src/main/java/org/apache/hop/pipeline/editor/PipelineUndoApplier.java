@@ -81,7 +81,7 @@ final class PipelineUndoApplier {
     int[] indexes = undo ? action.getPreviousIndex() : action.getCurrentIndex();
     for (int i = 0; i < values.length; i++) {
       PipelineHopMeta snapshot = (PipelineHopMeta) values[i];
-      pipeline.getPipelineHops().set(indexes[i], snapshot.clone());
+      pipeline.setPipelineHop(indexes[i], snapshot.clone());
     }
   }
 

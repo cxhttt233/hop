@@ -67,7 +67,7 @@ public class PipelineEditor {
     if (from == null
         || to == null
         || from == to
-        || pipelineMeta.findPipelineHop(from, to) != null) {
+        || pipelineMeta.findPipelineHop(from, to, true) != null) {
       return null;
     }
 
@@ -154,7 +154,7 @@ public class PipelineEditor {
       return false;
     }
     PipelineHopMeta before = hop.clone();
-    hop.setEnabled(enabled);
+    pipelineMeta.setHopEnabled(hop, enabled);
     recordHopChange(hop, before);
     return true;
   }
@@ -163,7 +163,7 @@ public class PipelineEditor {
   public boolean flipHop(String fromName, String toName) {
     PipelineHopMeta hop = findHop(fromName, toName);
     if (hop == null
-        || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform()) != null) {
+        || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform(), true) != null) {
       return false;
     }
     PipelineHopMeta before = hop.clone();
@@ -175,7 +175,7 @@ public class PipelineEditor {
   private PipelineHopMeta findHop(String fromName, String toName) {
     TransformMeta from = pipelineMeta.findTransform(fromName);
     TransformMeta to = pipelineMeta.findTransform(toName);
-    return from == null || to == null ? null : pipelineMeta.findPipelineHop(from, to);
+    return from == null || to == null ? null : pipelineMeta.findPipelineHop(from, to, true);
   }
 
   private void recordHopChange(PipelineHopMeta hop, PipelineHopMeta before) {
