@@ -20,31 +20,34 @@
 状态：进行中
 
 ## 当前进展
-- 已从 `design/web-modern-architecture` 创建独立工作分支 `experiment/web-modern-task-2`。
-- 已确认架构基线要求：服务端文档模型持有 `PipelineMeta` / `WorkflowMeta` 与撤销栈；图编辑复用 SWT-free 的模型 API；画布复用 `PipelineCanvasSvgRenderer` / `SvgGc` / `AreaOwner`，采用服务端权威 SVG + hit-map。
-- 已确认现有 `PipelineMeta` 图编辑 API、`AbstractMeta` / `ChangeAction` undo 基础以及 `.hpl/.hwf` XML 序列化均不依赖 SWT，可作为本任务实现基础。
-- 已按 A5 新增 SWT-free `PipelineEditor` 首个真实命令：`moveTransforms`，支持多节点移动、边界裁剪、重复/未知节点过滤，并把整批移动记录为单个 `PositionTransform` undo action；已补单元测试。
+- 已按 A5 新增 SWT-free `PipelineEditor`，实现 `moveTransforms`，支持批量移动、边界裁剪、重复/未知节点过滤，并记录单个 `PositionTransform` undo action。
+- 本轮继续实现 `addHop` / `deleteHop`：校验节点存在、自连接和重复 hop，调用 `PipelineMeta` 原生图 API，并分别记录 `NewHop` / `DeleteHop` undo action；已补单元测试。
+- 上一轮 Code Actions run `35867287340` 已成功完成。
 
 ## 下一步
-- 等待并处理 `63417cae` 的 Code Actions；通过后继续扩展 `PipelineEditor` 的 add/delete hop/transform 与 undo/redo 应用语义。
-- `web/api` 骨架由任务 1 落地前，继续推进 engine 内 A5 命令层，不因跨任务依赖停滞。
+- 处理本轮 hop commands 的 Code Actions；通过后继续 A5 的 hop enabled/flip 与 transform 删除等紧邻命令语义。
+- 随后实现架构要求的 SWT-free undo/redo 应用层；`web/api` 骨架落地后再接 DocumentResource，不越界代替任务 1。
 
 ## 最近提交
-- `63417cae feat: add headless pipeline move command`。
+- `4d903a28 test: cover headless pipeline hop commands`。
+- `40269b13 feat: add headless pipeline hop commands`。
+- `346add6d feat: add headless pipeline move command`。
 
 ## Actions
-- `63417cae` 已触发 Hop PR Build (Code) run `35867287340`；当前 build 与 ui-tests 均运行中。
-- 本机 Maven wrapper 因 `/home/ubuntu/.m2` 为 root 所有无法直接使用默认缓存；已改以 Actions 作为权威验证，不视为架构阻塞。
+- `346add6d` 的 Hop PR Build (Code) run `35867287340`：success。
+- `4d903a28` 已由 push 触发新一轮 Actions，等待结果。
+- 本机 Maven wrapper 默认缓存无写权限；改用临时 Maven home 后又发现 `JAVA_HOME` 未配置，因此仍以 GitHub Actions 为权威验证。
 
 ## 架构文档对应章节
-- 0 结论摘要：文档服务器模型、服务端权威 SVG。
-- 1.2 执行内核：PipelineMeta/WorkflowMeta、模型编辑 API、AbstractMeta/ChangeAction、PipelineCanvasSvgRenderer/SvgGc/AreaOwner。
-- 后续实现严格继续按 `docs/web-modern-architecture-plan.md` 中 Document Model / Graph / Commands / Render / Save / Undo 对应契约推进。
+- 1.2：`PipelineMeta`/`WorkflowMeta`、模型编辑 API、`AbstractMeta`/`ChangeAction`、SVG renderer。
+- A5：SWT-free `PipelineEditor` / `WorkflowEditor` 图编辑命令层。
+- 命令契约：`setHopEnabled`、`flipHop`、`splitHop`、`undo` / `redo`。
+- R10：提炼 engine 级 UndoApplier。
 
 ## 问题 / 依赖
 - 当前无架构阻塞。
-- `web/api` 模块尚未出现在本任务分支，因此 DocumentResource 接线暂属任务 1 依赖；Task 2 先实现架构明确要求的 engine A5。
-- Task 2 分支此前不存在，已从正式架构分支创建；未修改 PoC 集成主线或其他任务分支。
+- 当前源码桌面 Pipeline undo 已改为 gzip XML snapshot (`HopGuiPipelineUndoDelegate` → `HopGuiPipelineGraph.undo/redo`)，而正式架构 R10 仍指定 `ChangeAction` 反向应用。Task 2 继续按正式架构实现 engine 级语义；暂记录此源码差异，尚未证明需要改变核心设计。
+- `web/api` 仍是任务 1 直接依赖；不阻塞 engine A5 的独立推进。
 
 ## 最后更新
 - 2026-09-23
