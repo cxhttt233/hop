@@ -71,16 +71,24 @@ class ConfigJsonSerializerTest {
     String name;
 
     @HopMetadataProperty int limit;
-    @HopMetadataProperty(defaultBoolean = true) boolean enabled;
-    @HopMetadataProperty(storeWithCode = true) Mode mode;
+
+    @HopMetadataProperty(defaultBoolean = true)
+    boolean enabled;
+
+    @HopMetadataProperty(storeWithCode = true)
+    Mode mode;
+
     @HopMetadataProperty List<Item> items = new ArrayList<>();
-    @HopMetadataProperty(isExcludedFromSerialization = true) String ignored;
+
+    @HopMetadataProperty(isExcludedFromSerialization = true)
+    String ignored;
 
     SampleConfig() {}
   }
 
   static class Item {
     @HopMetadataProperty String name;
+
     @HopMetadataProperty int ordinal;
 
     Item() {}
