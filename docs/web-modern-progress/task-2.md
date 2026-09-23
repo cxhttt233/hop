@@ -26,25 +26,25 @@
 - 已实现 `deleteTransform`：删除 Transform 时同步清理关联 Hop，并用 linked `DeletePipelineHop` + `DeleteTransform` ChangeAction 保留可恢复的图结构与原索引。
 - 本轮新增 R10 SWT-free `PipelineUndoApplier` 与 `PipelineEditor.undo/redo`，覆盖 transform/hop 新增删除、hop 变更、transform 位置，并支持 linked ChangeAction 组合动作。
 - 已补 hop mutation 单元测试，并修正测试中 ActionType 为当前源码实际枚举名。
+- 已定位并修复 `05dd2fe38f` 的 engine 测试失败：`AbstractMeta.addUndo` 恢复 `nextAlso` 记录；hop 查找包含 disabled hop；启停走 `PipelineMeta.setHopEnabled` 清缓存；Undo hop 替换走可写的 `setPipelineHop` API。
+- 已新增 `addTransform` SWT-free 命令，校验空名/重名，并覆盖 NewTransform undo/redo 往返。
 
 ## 下一步
-- 等待本轮 R10 undo/redo 提交的 Actions 验证；若失败先修复真实原因。
-- Actions 通过后继续补齐 Transform 新增/变更命令，并进入 SVG render snapshot / Save 的紧邻切片。
+- 等待 `f99620e679` 的 Actions 验证；若失败继续按真实测试/构建日志修复。
+- Actions 稳定后继续 Transform 变更命令，并进入 SVG render snapshot / Save 的紧邻切片。
 - `web/api` 骨架落地后再接 DocumentResource，不越界代替任务 1。
 
 ## 最近提交
-- 本轮待提交：R10 SWT-free undo/redo applier、组合动作与 move/hop mutation 往返测试。
-- `e2539309 feat: add headless pipeline transform delete`。
-- `a47c93fd fix: snapshot pipeline hop change undo state`。
-- `be5b68a9 fix: use pipeline hop undo action types`。
-- `3a95d3b5 test: cover headless pipeline hop mutations`。
-- `9711c334 feat: add headless pipeline hop mutations`。
+- `f99620e679 feat: add headless pipeline transform command`。
+- `5e7a95bd1a fix: stabilize pipeline command undo semantics`。
+- `05dd2fe38f style: format pipeline undo applier`。
+- `f8f289ca29 style: format pipeline editor commands`。
+- `e61d515bca feat: add headless pipeline undo redo`。
 
 ## Actions
-- `346add6d` 的 Hop PR Build (Code) run `35867287340`：success。
-- `e2539309` 已 push；GitHub combined status 当前尚无 status context。
-- 本轮 R10 提交完成后由 GitHub Actions 继续权威验证。
-- 本机 Maven wrapper 默认缓存无写权限且 `JAVA_HOME` 未配置，因此仍以 GitHub Actions 为权威验证。
+- `05dd2fe38f` 的 Code run `35915581651`：RAT / Checkstyle / Spotless / UI tests 通过，Maven engine tests 失败；4 个失败点均已在 `5e7a95bd1a` 修复。
+- `5e7a95bd1a` Code run `35922561724` 已触发；随后 `f99620e679` push 将触发最新权威验证。
+- 腾讯云当前无宿主 Java；已启动 JDK 21 Docker 定向测试环境下载依赖，GitHub Actions 仍作为最终验证。
 
 ## 架构文档对应章节
 - 1.2：`PipelineMeta`/`WorkflowMeta`、模型编辑 API、`AbstractMeta`/`ChangeAction`、SVG renderer。
@@ -58,4 +58,4 @@
 - `web/api` 仍是任务 1 直接依赖；不阻塞 engine A5 的独立推进。
 
 ## 最后更新
-- 2026-09-23
+- 2026-09-24
