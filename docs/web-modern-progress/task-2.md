@@ -23,16 +23,18 @@
 - 已从 `design/web-modern-architecture` 创建独立工作分支 `experiment/web-modern-task-2`。
 - 已确认架构基线要求：服务端文档模型持有 `PipelineMeta` / `WorkflowMeta` 与撤销栈；图编辑复用 SWT-free 的模型 API；画布复用 `PipelineCanvasSvgRenderer` / `SvgGc` / `AreaOwner`，采用服务端权威 SVG + hit-map。
 - 已确认现有 `PipelineMeta` 图编辑 API、`AbstractMeta` / `ChangeAction` undo 基础以及 `.hpl/.hwf` XML 序列化均不依赖 SWT，可作为本任务实现基础。
+- 已按 A5 新增 SWT-free `PipelineEditor` 首个真实命令：`moveTransforms`，支持多节点移动、边界裁剪、重复/未知节点过滤，并把整批移动记录为单个 `PositionTransform` undo action；已补单元测试。
 
 ## 下一步
-- 按架构文档的文档服务器/API 契约定位首个最小实现切片，先建立 Document Model 生命周期与 pipeline 文档打开/读取骨架，再接语义化 commands、render/save/undo。
-- 补齐对应单元测试并接入现有 Maven/Actions 验证路径。
+- 等待并处理 `63417cae` 的 Code Actions；通过后继续扩展 `PipelineEditor` 的 add/delete hop/transform 与 undo/redo 应用语义。
+- `web/api` 骨架由任务 1 落地前，继续推进 engine 内 A5 命令层，不因跨任务依赖停滞。
 
 ## 最近提交
-- 初始化 Task 2 进度文件（本提交）。
+- `63417cae feat: add headless pipeline move command`。
 
 ## Actions
-- 尚未产生 Task 2 实现提交；下一稳定切片提交后触发并检查 Actions。
+- `63417cae` 已触发 Hop PR Build (Code) run `35867287340`；当前 build 与 ui-tests 均运行中。
+- 本机 Maven wrapper 因 `/home/ubuntu/.m2` 为 root 所有无法直接使用默认缓存；已改以 Actions 作为权威验证，不视为架构阻塞。
 
 ## 架构文档对应章节
 - 0 结论摘要：文档服务器模型、服务端权威 SVG。
@@ -41,6 +43,7 @@
 
 ## 问题 / 依赖
 - 当前无架构阻塞。
+- `web/api` 模块尚未出现在本任务分支，因此 DocumentResource 接线暂属任务 1 依赖；Task 2 先实现架构明确要求的 engine A5。
 - Task 2 分支此前不存在，已从正式架构分支创建；未修改 PoC 集成主线或其他任务分支。
 
 ## 最后更新
