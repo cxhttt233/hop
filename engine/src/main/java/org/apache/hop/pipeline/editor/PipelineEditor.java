@@ -185,7 +185,8 @@ public class PipelineEditor {
   public boolean flipHop(String fromName, String toName) {
     PipelineHopMeta hop = findHop(fromName, toName);
     if (hop == null
-        || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform(), true) != null) {
+        || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform(), true)
+            != null) {
       return false;
     }
     PipelineHopMeta before = hop.clone();
