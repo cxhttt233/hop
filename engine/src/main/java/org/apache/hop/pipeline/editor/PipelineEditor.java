@@ -98,8 +98,8 @@ public class PipelineEditor {
   private void recordHopChange(PipelineHopMeta hop, PipelineHopMeta before) {
     int position = pipelineMeta.getPipelineHops().indexOf(hop);
     pipelineMeta.addUndo(
-        new Object[] {hop},
         new Object[] {before},
+        new Object[] {hop.clone()},
         new int[] {position},
         null,
         null,
