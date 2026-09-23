@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.hop.base.AbstractMeta;
 import org.apache.hop.core.gui.Point;
+import org.apache.hop.pipeline.PipelineHopMeta;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 
@@ -30,6 +31,43 @@ public class PipelineEditor {
 
   public PipelineEditor(PipelineMeta pipelineMeta) {
     this.pipelineMeta = Objects.requireNonNull(pipelineMeta, "pipelineMeta");
+  }
+
+  /** Adds a hop between two existing transforms as one undoable operation. */
+  public PipelineHopMeta addHop(String fromName, String toName) {
+    TransformMeta from = pipelineMeta.findTransform(fromName);
+    TransformMeta to = pipelineMeta.findTransform(toName);
+    if (from == null || to == null || from == to || pipelineMeta.findPipelineHop(from, to) != null) {
+      return null;
+    }
+
+    PipelineHopMeta hop = new PipelineHopMeta(from, to);
+    pipelineMeta.addPipelineHop(hop);
+    int position = pipelineMeta.getPipelineHops().indexOf(hop);
+    pipelineMeta.addUndo(
+        new Object[] {hop}, null, new int[] {position}, null, null, AbstractMeta.TYPE_UNDO_NEW, false);
+    pipelineMeta.setChanged();
+    return hop;
+  }
+
+  /** Removes an existing hop as one undoable operation. */
+  public boolean deleteHop(String fromName, String toName) {
+    TransformMeta from = pipelineMeta.findTransform(fromName);
+    TransformMeta to = pipelineMeta.findTransform(toName);
+    if (from == null || to == null) {
+      return false;
+    }
+    PipelineHopMeta hop = pipelineMeta.findPipelineHop(from, to);
+    if (hop == null) {
+      return false;
+    }
+
+    int position = pipelineMeta.getPipelineHops().indexOf(hop);
+    pipelineMeta.removePipelineHop(hop);
+    pipelineMeta.addUndo(
+        new Object[] {hop}, null, new int[] {position}, null, null, AbstractMeta.TYPE_UNDO_DELETE, false);
+    pipelineMeta.setChanged();
+    return true;
   }
 
   /** Moves the named transforms as one undoable operation. */
