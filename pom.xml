@@ -681,6 +681,7 @@
             <modules>
                 <module>core</module>
                 <module>engine</module>
+                <module>hop-web-api</module>
                 <module>lib</module>
                 <module>lib-jdbc</module>
                 <module>lib-p2</module>

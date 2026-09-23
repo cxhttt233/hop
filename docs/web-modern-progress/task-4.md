@@ -27,18 +27,21 @@
 - 已核实日志增量基础：`HopLogStore` 暴露全局单调行号和 `getLogBufferFromTo(parentLogChannelId, ..., from, to)`；`LoggingBuffer` 已通过 `LoggingRegistry.getLogChannelChildren` 包含子通道，并使用有界 buffer；实时监听由 `addLoggingEventListener` 提供。因此 REST log 的 `from/max` 和 SSE 重连补齐可直接建立在现有日志序号之上。
 - 发现一个实现细节：实时 listener 回调只收到 `HopLoggingEvent`，不携带 `BufferLine.nr`；为保证 SSE 的事件 seq 与日志补齐语义清晰，优先采用 ExecutionRegistry 自己的单调 SSE seq，同时日志 payload 保留 HopLogStore 行号。暂不修改 core 日志结构。
 
+- 已实现首个可测试代码切片：新增 `hop-web-api` 模块中的 `ExecutionRegistry` 与每执行 `ExecutionEventBuffer`，支持执行注册/显式删除/完成标记/TTL 清理，以及有界事件缓冲、单调 `seq` 和按 `Last-Event-ID` 语义 replay；覆盖重复 ID、运行中执行不被 TTL 回收、缓冲淘汰与每执行独立序列测试。
+- 已将 `hop-web-api` 接入根 Maven `base` profile，使现有 Code Actions 能实际编译和执行该模块测试。
+
 ## 下一步
-- 核对任务 1 的 Web/API 模块骨架是否已落到可复用分支；若尚未进入 task-4 基线，则避免抢改公共 Maven/API 文件，先实现可独立审查的 ExecutionRegistry/事件缓冲核心切片及测试。
-- 实现 ExecutionRegistry 最小生命周期：注册、会话归属、状态/控制代理、完成时间、显式删除、TTL 清理接口，并为 SSE 维护有界事件 ring buffer + 单调 seq/replay。
-- 增加 ExecutionRegistry 生命周期、事件序列/replay/有界缓冲测试，再触发代码 Actions 验证。
+- 等待并检查本次 Code Actions；若失败先修复。
+- 在当前核心上接入 Hop 执行引擎生命周期代理与完成 listener，并实现日志/metrics 事件生产；随后接 Jersey SSE resource 和 `Last-Event-ID` 重连。
 
 ## 最近提交
+- `feat(web): add execution event replay core`
 - `docs: record task 4 execution source findings`
 - `docs: initialize web modern task 4 progress`
 
 ## Actions
 - 初始化提交触发 `Hop PR Build (Documentation)`，run `35850662833`，结果 `success`。
-- 尚未有代码实现提交，因此代码构建 Actions 尚未触发。
+- 首个代码切片已提交；当前等待 Code Actions 验证。
 
 ## 架构文档对应章节
 - 2.2 前端：TypeScript SPA
@@ -57,4 +60,4 @@
 - 当前未发现需要修改正式架构的阻塞问题。
 
 ## 最后更新
-- 2026-09-23 18:55 +08:00
+- 2026-09-23 21:35 +08:00
