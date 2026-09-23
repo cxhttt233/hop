@@ -64,7 +64,10 @@ public class PipelineEditor {
   public PipelineHopMeta addHop(String fromName, String toName) {
     TransformMeta from = pipelineMeta.findTransform(fromName);
     TransformMeta to = pipelineMeta.findTransform(toName);
-    if (from == null || to == null || from == to || pipelineMeta.findPipelineHop(from, to) != null) {
+    if (from == null
+        || to == null
+        || from == to
+        || pipelineMeta.findPipelineHop(from, to) != null) {
       return null;
     }
 
@@ -72,7 +75,13 @@ public class PipelineEditor {
     pipelineMeta.addPipelineHop(hop);
     int position = pipelineMeta.getPipelineHops().indexOf(hop);
     pipelineMeta.addUndo(
-        new Object[] {hop}, null, new int[] {position}, null, null, AbstractMeta.TYPE_UNDO_NEW, false);
+        new Object[] {hop},
+        null,
+        new int[] {position},
+        null,
+        null,
+        AbstractMeta.TYPE_UNDO_NEW,
+        false);
     pipelineMeta.setChanged();
     return hop;
   }
@@ -87,7 +96,13 @@ public class PipelineEditor {
     int position = pipelineMeta.getPipelineHops().indexOf(hop);
     pipelineMeta.removePipelineHop(hop);
     pipelineMeta.addUndo(
-        new Object[] {hop}, null, new int[] {position}, null, null, AbstractMeta.TYPE_UNDO_DELETE, false);
+        new Object[] {hop},
+        null,
+        new int[] {position},
+        null,
+        null,
+        AbstractMeta.TYPE_UNDO_DELETE,
+        false);
     pipelineMeta.setChanged();
     return true;
   }
@@ -147,7 +162,8 @@ public class PipelineEditor {
   /** Reverses an existing hop when the reverse edge does not already exist. */
   public boolean flipHop(String fromName, String toName) {
     PipelineHopMeta hop = findHop(fromName, toName);
-    if (hop == null || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform()) != null) {
+    if (hop == null
+        || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform()) != null) {
       return false;
     }
     PipelineHopMeta before = hop.clone();

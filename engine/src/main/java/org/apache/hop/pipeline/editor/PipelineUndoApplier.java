@@ -38,7 +38,8 @@ final class PipelineUndoApplier {
       case DeletePipelineHop -> applyHopCreateDelete(action, !undo);
       case ChangePipelineHop -> applyHopChange(action, undo);
       case PositionTransform -> applyTransformPosition(action, undo);
-      default -> throw new IllegalArgumentException("Unsupported pipeline undo action: " + action.getType());
+      default -> throw new IllegalArgumentException(
+          "Unsupported pipeline undo action: " + action.getType());
     }
     pipeline.setChanged();
   }
@@ -46,23 +47,27 @@ final class PipelineUndoApplier {
   private void applyTransformCreateDelete(ChangeAction action, boolean remove) {
     Object[] values = action.getCurrent();
     int[] indexes = action.getCurrentIndex();
-    for (int i = remove ? values.length - 1 : 0; remove ? i >= 0 : i < values.length; i += remove ? -1 : 1) {
+    for (int i = remove ? values.length - 1 : 0;
+        remove ? i >= 0 : i < values.length;
+        i += remove ? -1 : 1) {
       TransformMeta transform = (TransformMeta) values[i];
       if (remove) {
         int position = pipeline.indexOfTransform(transform);
         if (position >= 0) pipeline.removeTransform(position);
-      }
-      else pipeline.addTransform(indexes[i], transform);
+      } else pipeline.addTransform(indexes[i], transform);
     }
   }
 
   private void applyHopCreateDelete(ChangeAction action, boolean remove) {
     Object[] values = action.getCurrent();
     int[] indexes = action.getCurrentIndex();
-    for (int i = remove ? values.length - 1 : 0; remove ? i >= 0 : i < values.length; i += remove ? -1 : 1) {
+    for (int i = remove ? values.length - 1 : 0;
+        remove ? i >= 0 : i < values.length;
+        i += remove ? -1 : 1) {
       PipelineHopMeta hop = (PipelineHopMeta) values[i];
       if (remove) {
-        PipelineHopMeta existing = pipeline.findPipelineHop(hop.getFromTransform(), hop.getToTransform());
+        PipelineHopMeta existing =
+            pipeline.findPipelineHop(hop.getFromTransform(), hop.getToTransform());
         if (existing != null) pipeline.removePipelineHop(existing);
       } else {
         pipeline.addPipelineHop(indexes[i], hop);
