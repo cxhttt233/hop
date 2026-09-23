@@ -36,12 +36,12 @@ class PipelineEditorTest {
     PipelineHopMeta hop = editor.addHop("first", "second");
     assertNotNull(hop);
     assertEquals(1, pipeline.getPipelineHops().size());
-    assertEquals(ChangeAction.ActionType.NewHop, pipeline.previousUndo().getType());
+    assertEquals(ChangeAction.ActionType.NewPipelineHop, pipeline.previousUndo().getType());
 
     pipeline.clearUndo();
     assertEquals(true, editor.deleteHop("first", "second"));
     assertEquals(0, pipeline.getPipelineHops().size());
-    assertEquals(ChangeAction.ActionType.DeleteHop, pipeline.previousUndo().getType());
+    assertEquals(ChangeAction.ActionType.DeletePipelineHop, pipeline.previousUndo().getType());
   }
 
   @Test
@@ -53,13 +53,13 @@ class PipelineEditorTest {
 
     assertEquals(true, editor.setHopEnabled("first", "second", false));
     assertEquals(false, hop.isEnabled());
-    assertEquals(ChangeAction.ActionType.ChangeHop, pipeline.previousUndo().getType());
+    assertEquals(ChangeAction.ActionType.ChangePipelineHop, pipeline.previousUndo().getType());
 
     pipeline.clearUndo();
     assertEquals(true, editor.flipHop("first", "second"));
     assertEquals("second", hop.getFromTransform().getName());
     assertEquals("first", hop.getToTransform().getName());
-    assertEquals(ChangeAction.ActionType.ChangeHop, pipeline.previousUndo().getType());
+    assertEquals(ChangeAction.ActionType.ChangePipelineHop, pipeline.previousUndo().getType());
   }
 
   @Test
