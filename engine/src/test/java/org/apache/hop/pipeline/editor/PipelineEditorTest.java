@@ -45,6 +45,33 @@ class PipelineEditorTest {
   }
 
   @Test
+  void deletesTransformAndAttachedHopAsLinkedUndoActions() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    assertNotNull(editor.addHop("first", "second"));
+    pipeline.clearUndo();
+
+    assertEquals(true, editor.deleteTransform("first"));
+    assertEquals(null, pipeline.findTransform("first"));
+    assertEquals(0, pipeline.nrPipelineHops());
+    ChangeAction deleteTransform = pipeline.previousUndo();
+    assertNotNull(deleteTransform);
+    assertEquals(ChangeAction.ActionType.DeleteTransform, deleteTransform.getType());
+    assertEquals(ChangeAction.ActionType.DeletePipelineHop, pipeline.viewPreviousUndo().getType());
+    assertEquals(true, pipeline.viewPreviousUndo().getNextAlso());
+  }
+
+  @Test
+  void rejectsUnknownTransformDeleteWithoutUndo() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    pipeline.clearUndo();
+
+    assertEquals(false, new PipelineEditor(pipeline).deleteTransform("missing"));
+    assertEquals(2, pipeline.nrTransforms());
+    assertEquals(null, pipeline.previousUndo());
+  }
+
+  @Test
   void enablesDisablesAndFlipsHopWithUndoRecords() {
     PipelineMeta pipeline = pipelineWithTwoTransforms();
     PipelineEditor editor = new PipelineEditor(pipeline);

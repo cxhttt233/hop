@@ -65,6 +65,46 @@ public class PipelineEditor {
     return true;
   }
 
+  /** Removes a transform and its attached hops, recording both parts for undo. */
+  public boolean deleteTransform(String name) {
+    TransformMeta transform = pipelineMeta.findTransform(name);
+    if (transform == null) {
+      return false;
+    }
+
+    List<PipelineHopMeta> attachedHops = new ArrayList<>();
+    List<Integer> hopPositions = new ArrayList<>();
+    for (int i = 0; i < pipelineMeta.nrPipelineHops(); i++) {
+      PipelineHopMeta hop = pipelineMeta.getPipelineHop(i);
+      if (hop.getFromTransform() == transform || hop.getToTransform() == transform) {
+        attachedHops.add(hop.clone());
+        hopPositions.add(i);
+      }
+    }
+    if (!attachedHops.isEmpty()) {
+      pipelineMeta.addUndo(
+          attachedHops.toArray(),
+          null,
+          hopPositions.stream().mapToInt(Integer::intValue).toArray(),
+          null,
+          null,
+          AbstractMeta.TYPE_UNDO_DELETE,
+          true);
+    }
+
+    int position = pipelineMeta.indexOfTransform(transform);
+    pipelineMeta.removeTransform(position);
+    pipelineMeta.addUndo(
+        new Object[] {transform},
+        null,
+        new int[] {position},
+        null,
+        null,
+        AbstractMeta.TYPE_UNDO_DELETE,
+        false);
+    return true;
+  }
+
   /** Enables or disables an existing hop and records the change for undo. */
   public boolean setHopEnabled(String fromName, String toName, boolean enabled) {
     PipelineHopMeta hop = findHop(fromName, toName);
