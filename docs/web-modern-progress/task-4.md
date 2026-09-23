@@ -26,10 +26,11 @@
 - 已实现 `PipelineExecutionLifecycle`：finished listener 注册后按 `prepareExecution → startThreads` 启动，写入 preparing/running/finished 事件并标记完成；已有代理引擎单测覆盖调用顺序、状态事件与完成标记。
 - 已实现 1s `ExecutionMetricsPublisher`，从 `getEngineMetrics()/getComponents()` 采集 Execution UI 所需组件指标并写入事件缓冲。
 - 已实现 `ExecutionLogPublisher`：通过 `LoggingBuffer.addLoggingEventListener` 实时监听，按根 `logChannelId` + `LoggingRegistry` 子通道过滤并写入事件缓冲，关闭时解除 listener。
+- 已补齐 Metrics/Log publisher 单测：验证组件指标快照、执行日志通道过滤和事件写入；当前领域测试共 9 个全部通过。
 - 实时 listener 不携带 `BufferLine.nr`：SSE 使用 Registry 自身 seq；REST 增量日志继续使用 HopLogStore 行号，SSE 日志不伪造行号，不修改 core 日志结构。
 
 ## 下一步
-- 实现 Jersey SSE resource、15s heartbeat 与 `Last-Event-ID` replay，并补齐日志/指标 publisher 测试。
+- Task 1 正式 `web/api` 骨架落地后接 Jersey SSE resource；Task 4 先继续完善可迁移的 15s heartbeat / `Last-Event-ID` replay 领域流逻辑，不扩展共享 Web 脚手架。
 - SSE resource 稳定后继续 4.7 的执行详情、log from/max、stop/pause/resume/delete 端点，再进入 Execution UI 纵向集成。
 
 ## 最近提交
@@ -44,7 +45,9 @@
 - 本轮清理开发机未使用 Docker 镜像/构建缓存，释放约 7.4GB，解除磁盘 100% 导致的 Git/Maven 阻塞。
 - 首次 `compile` 暴露 `hop-web-api` 缺少 `hop-core` 编译依赖；已最小补齐。随后 Docker + JDK21 执行 `mvn -pl hop-web-api -am -DskipTests -Drat.skip=true package`：BUILD SUCCESS。
 - 安装 core/engine reactor 依赖后执行 `mvn -pl hop-web-api -Drat.skip=true test`：BUILD SUCCESS，7 tests，0 failures/errors/skips。
-- 最新提交暂未出现 PR-triggered Actions run；继续观察，若 CI 失败优先修真实原因。
+- Docker + JDK21 重新验证 `mvn -pl hop-web-api -Drat.skip=true test`：BUILD SUCCESS，9 tests，0 failures/errors/skips。
+- 已执行官方 `spotless:apply` 一次性规范现有 Task 4 Java/POM 格式，随后测试仍全部通过。
+- 最新提交 push 后继续观察 Actions，若 CI 失败优先修真实原因。
 
 ## 架构文档对应章节
 - 2.2 前端：TypeScript SPA
@@ -63,4 +66,4 @@
 - 当前未发现需要修改正式架构的阻塞问题。
 
 ## 最后更新
-- 2026-09-24 06:30 +08:00
+- 2026-09-24 07:34 +08:00

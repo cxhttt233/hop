@@ -45,8 +45,15 @@ public final class ExecutionLogPublisher<T extends PipelineMeta> implements Auto
     if (!(event.getMessage() instanceof LogMessage message) || !belongsToExecution(message)) {
       return;
     }
-    entry.events().append("log", new LogEvent(event.timeStamp, event.getLevel().getCode(),
-        message.getSubject(), message.getMessage()));
+    entry
+        .events()
+        .append(
+            "log",
+            new LogEvent(
+                event.timeStamp,
+                event.getLevel().getCode(),
+                message.getSubject(),
+                message.getMessage()));
   }
 
   private boolean belongsToExecution(LogMessage message) {

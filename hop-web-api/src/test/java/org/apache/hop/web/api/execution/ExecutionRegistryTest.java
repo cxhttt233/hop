@@ -40,7 +40,8 @@ class ExecutionRegistryTest {
   void rejectsDuplicateIds() {
     ExecutionRegistry<Object> registry = new ExecutionRegistry<>(Duration.ofHours(24), 8);
     registry.register("e1", "alice", new Object());
-    assertThrows(IllegalArgumentException.class, () -> registry.register("e1", "bob", new Object()));
+    assertThrows(
+        IllegalArgumentException.class, () -> registry.register("e1", "bob", new Object()));
   }
 
   @Test

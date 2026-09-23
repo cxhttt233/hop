@@ -50,9 +50,15 @@ class PipelineExecutionLifecycleTest {
                     }
                     case "prepareExecution" -> calls.add("prepare");
                     case "startThreads" -> calls.add("start");
-                    case "getErrors" -> { return 0; }
-                    case "isStopped" -> { return false; }
-                    default -> { return defaultValue(method.getReturnType()); }
+                    case "getErrors" -> {
+                      return 0;
+                    }
+                    case "isStopped" -> {
+                      return false;
+                    }
+                    default -> {
+                      return defaultValue(method.getReturnType());
+                    }
                   }
                   return null;
                 });
@@ -66,7 +72,8 @@ class PipelineExecutionLifecycleTest {
 
     assertEquals(List.of("listener", "prepare", "start"), calls);
     assertEquals(
-        List.of("state", "state"), entry.events().replayAfter(0).stream().map(ExecutionEvent::type).toList());
+        List.of("state", "state"),
+        entry.events().replayAfter(0).stream().map(ExecutionEvent::type).toList());
     finishedListener.get().finished(engine);
     assertTrue(entry.completedAt().isPresent());
     assertEquals("finished", entry.events().replayAfter(2).getFirst().type());

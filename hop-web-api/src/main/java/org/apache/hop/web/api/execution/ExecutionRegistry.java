@@ -44,17 +44,25 @@ public final class ExecutionRegistry<T> {
   }
 
   public Entry<T> register(String id, String owner, T execution) {
-    Entry<T> entry = new Entry<>(owner, execution, new ExecutionEventBuffer(eventCapacity), clock.instant());
+    Entry<T> entry =
+        new Entry<>(owner, execution, new ExecutionEventBuffer(eventCapacity), clock.instant());
     if (executions.putIfAbsent(id, entry) != null) {
       throw new IllegalArgumentException("execution already registered: " + id);
     }
     return entry;
   }
 
-  public Optional<Entry<T>> find(String id) { return Optional.ofNullable(executions.get(id)); }
-  public Optional<Entry<T>> remove(String id) { return Optional.ofNullable(executions.remove(id)); }
+  public Optional<Entry<T>> find(String id) {
+    return Optional.ofNullable(executions.get(id));
+  }
 
-  public void markCompleted(String id) { require(id).completedAt = clock.instant(); }
+  public Optional<Entry<T>> remove(String id) {
+    return Optional.ofNullable(executions.remove(id));
+  }
+
+  public void markCompleted(String id) {
+    require(id).completedAt = clock.instant();
+  }
 
   public int cleanupExpired() {
     Instant cutoff = clock.instant().minus(completedTtl);
@@ -83,11 +91,25 @@ public final class ExecutionRegistry<T> {
       this.createdAt = createdAt;
     }
 
-    public String owner() { return owner; }
-    public T execution() { return execution; }
-    public ExecutionEventBuffer events() { return events; }
-    public Instant createdAt() { return createdAt; }
-    public Optional<Instant> completedAt() { return Optional.ofNullable(completedAt); }
+    public String owner() {
+      return owner;
+    }
+
+    public T execution() {
+      return execution;
+    }
+
+    public ExecutionEventBuffer events() {
+      return events;
+    }
+
+    public Instant createdAt() {
+      return createdAt;
+    }
+
+    public Optional<Instant> completedAt() {
+      return Optional.ofNullable(completedAt);
+    }
 
     private boolean isCompletedBefore(Instant cutoff) {
       Instant completed = completedAt;
