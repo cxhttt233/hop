@@ -27,7 +27,8 @@ public final class PipelineExecutionLifecycle {
   public static <T extends PipelineMeta> void start(
       String id, ExecutionRegistry<IPipelineEngine<T>> registry) throws HopException {
     ExecutionRegistry.Entry<IPipelineEngine<T>> entry =
-        registry.find(id).orElseThrow(() -> new IllegalArgumentException("unknown execution: " + id));    IPipelineEngine<T> engine = entry.execution();
+        registry.find(id).orElseThrow(() -> new IllegalArgumentException("unknown execution: " + id));
+    IPipelineEngine<T> engine = entry.execution();
     engine.addExecutionFinishedListener(
         finished -> {
           entry.events().append(

@@ -29,19 +29,23 @@
 
 - 已实现首个可测试代码切片：新增 `hop-web-api` 模块中的 `ExecutionRegistry` 与每执行 `ExecutionEventBuffer`，支持执行注册/显式删除/完成标记/TTL 清理，以及有界事件缓冲、单调 `seq` 和按 `Last-Event-ID` 语义 replay；覆盖重复 ID、运行中执行不被 TTL 回收、缓冲淘汰与每执行独立序列测试。
 - 已将 `hop-web-api` 接入根 Maven `base` profile，使现有 Code Actions 能实际编译和执行该模块测试。
+- 已接入 `PipelineExecutionLifecycle`：注册 finished listener 后按 `prepareExecution → startThreads` 启动，写入 preparing/running/finished 事件并在完成时标记 Registry；补充代理引擎单测覆盖调用顺序、状态事件与完成回收标记。
 
 ## 下一步
-- 等待并检查本次 Code Actions；若失败先修复。
-- 在当前核心上接入 Hop 执行引擎生命周期代理与完成 listener，并实现日志/metrics 事件生产；随后接 Jersey SSE resource 和 `Last-Event-ID` 重连。
+- 继续观察本分支 Code Actions；当前 fork 的 `gh run list --branch experiment/web-modern-task-4` 暂未返回新 run。
+- 在现有生命周期核心上实现日志/metrics 事件生产；随后接 Jersey SSE resource、15s 心跳和 `Last-Event-ID` 重连。
 
 ## 最近提交
+- `fix(web): pin junit version for api module`（已 push）
+- `feat(web): bridge pipeline execution lifecycle`
 - `feat(web): add execution event replay core`
 - `docs: record task 4 execution source findings`
 - `docs: initialize web modern task 4 progress`
 
 ## Actions
 - 初始化提交触发 `Hop PR Build (Documentation)`，run `35850662833`，结果 `success`。
-- 首个代码切片已提交；当前等待 Code Actions 验证。
+- 首个代码切片已提交；上一轮 Maven model 失败已通过显式 `${junit.version}` 修复并于本轮 push。
+- 本轮 Docker/JDK21 Maven 定向构建已启动，但首次解析根 POM 大量 BOM 仍在下载依赖，尚未得到有效编译结论；未将其记为通过。
 
 ## 架构文档对应章节
 - 2.2 前端：TypeScript SPA
@@ -60,4 +64,4 @@
 - 当前未发现需要修改正式架构的阻塞问题。
 
 ## 最后更新
-- 2026-09-23 21:35 +08:00
+- 2026-09-24 04:30 +08:00
