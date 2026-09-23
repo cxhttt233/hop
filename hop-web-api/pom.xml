@@ -28,6 +28,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.hop</groupId>
+      <artifactId>hop-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hop</groupId>
       <artifactId>hop-engine</artifactId>
       <version>${project.version}</version>
     </dependency>
