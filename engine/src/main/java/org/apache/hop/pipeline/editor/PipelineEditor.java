@@ -60,6 +60,28 @@ public class PipelineEditor {
     return true;
   }
 
+  /** Adds a configured transform when its name is available. */
+  public boolean addTransform(TransformMeta transform) {
+    if (transform == null
+        || transform.getName() == null
+        || transform.getName().isBlank()
+        || pipelineMeta.findTransform(transform.getName()) != null) {
+      return false;
+    }
+
+    pipelineMeta.addTransform(transform);
+    int position = pipelineMeta.indexOfTransform(transform);
+    pipelineMeta.addUndo(
+        new Object[] {transform},
+        null,
+        new int[] {position},
+        null,
+        null,
+        AbstractMeta.TYPE_UNDO_NEW,
+        false);
+    return true;
+  }
+
   /** Adds a hop between two existing transforms as one undoable operation. */
   public PipelineHopMeta addHop(String fromName, String toName) {
     TransformMeta from = pipelineMeta.findTransform(fromName);

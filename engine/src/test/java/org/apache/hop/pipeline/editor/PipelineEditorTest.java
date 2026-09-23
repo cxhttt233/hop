@@ -29,6 +29,22 @@ import org.junit.jupiter.api.Test;
 
 class PipelineEditorTest {
   @Test
+  void addsTransformAndRoundTripsUndoRedo() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    TransformMeta third = transform("third", 50, 60);
+
+    assertEquals(true, editor.addTransform(third));
+    assertEquals(third, pipeline.findTransform("third"));
+    assertEquals(ChangeAction.ActionType.NewTransform, pipeline.previousUndo().getType());
+    assertEquals(true, editor.undo());
+    assertEquals(null, pipeline.findTransform("third"));
+    assertEquals(true, editor.redo());
+    assertEquals(third, pipeline.findTransform("third"));
+    assertEquals(false, editor.addTransform(transform("third", 70, 80)));
+  }
+
+  @Test
   void addsAndDeletesHopWithUndoRecords() {
     PipelineMeta pipeline = pipelineWithTwoTransforms();
     PipelineEditor editor = new PipelineEditor(pipeline);
