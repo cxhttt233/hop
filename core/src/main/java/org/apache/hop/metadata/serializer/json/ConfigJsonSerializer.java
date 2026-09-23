@@ -144,11 +144,21 @@ public final class ConfigJsonSerializer {
       return null;
     }
     Class<?> type = field.getType();
-    if (String.class.equals(type)) return node.asText();
-    if (int.class.equals(type) || Integer.class.equals(type)) return node.asInt();
-    if (long.class.equals(type) || Long.class.equals(type)) return node.asLong();
-    if (boolean.class.equals(type) || Boolean.class.equals(type)) return node.asBoolean();
-    if (double.class.equals(type) || Double.class.equals(type)) return node.asDouble();
+    if (String.class.equals(type)) {
+      return node.asText();
+    }
+    if (int.class.equals(type) || Integer.class.equals(type)) {
+      return node.asInt();
+    }
+    if (long.class.equals(type) || Long.class.equals(type)) {
+      return node.asLong();
+    }
+    if (boolean.class.equals(type) || Boolean.class.equals(type)) {
+      return node.asBoolean();
+    }
+    if (double.class.equals(type) || Double.class.equals(type)) {
+      return node.asDouble();
+    }
     if (type.isEnum()) {
       if (property.storeWithCode()) {
         for (Object constant : type.getEnumConstants()) {
@@ -170,9 +180,11 @@ public final class ConfigJsonSerializer {
       Class<?> itemType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
       java.util.ArrayList<Object> values = new java.util.ArrayList<>();
       for (JsonNode item : node) {
-        if (String.class.equals(itemType)) values.add(item.asText());
-        else if (Integer.class.equals(itemType)) values.add(item.asInt());
-        else {
+        if (String.class.equals(itemType)) {
+          values.add(item.asText());
+        } else if (Integer.class.equals(itemType)) {
+          values.add(item.asInt());
+        } else {
           Object child;
           try {
             child = itemType.getDeclaredConstructor().newInstance();
