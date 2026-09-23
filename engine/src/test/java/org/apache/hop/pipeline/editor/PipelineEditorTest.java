@@ -22,11 +22,48 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.List;
 import org.apache.hop.core.gui.Point;
 import org.apache.hop.core.undo.ChangeAction;
+import org.apache.hop.pipeline.PipelineHopMeta;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.Test;
 
 class PipelineEditorTest {
+  @Test
+  void addsAndDeletesHopWithUndoRecords() {
+    PipelineMeta pipeline = new PipelineMeta();
+    TransformMeta first = transform("first", 10, 20);
+    TransformMeta second = transform("second", 30, 40);
+    pipeline.addTransform(first);
+    pipeline.addTransform(second);
+    pipeline.clearUndo();
+    pipeline.clearChanged();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+
+    PipelineHopMeta hop = editor.addHop("first", "second");
+    assertNotNull(hop);
+    assertEquals(1, pipeline.getPipelineHops().size());
+    assertEquals(ChangeAction.ActionType.NewHop, pipeline.previousUndo().getType());
+
+    pipeline.clearUndo();
+    assertEquals(true, editor.deleteHop("first", "second"));
+    assertEquals(0, pipeline.getPipelineHops().size());
+    assertEquals(ChangeAction.ActionType.DeleteHop, pipeline.previousUndo().getType());
+  }
+
+  @Test
+  void rejectsInvalidOrDuplicateHops() {
+    PipelineMeta pipeline = new PipelineMeta();
+    pipeline.addTransform(transform("first", 0, 0));
+    pipeline.addTransform(transform("second", 10, 10));
+    PipelineEditor editor = new PipelineEditor(pipeline);
+
+    assertEquals(null, editor.addHop("missing", "second"));
+    assertEquals(null, editor.addHop("first", "first"));
+    assertNotNull(editor.addHop("first", "second"));
+    assertEquals(null, editor.addHop("first", "second"));
+    assertEquals(false, editor.deleteHop("second", "first"));
+  }
+
   @Test
   void movesTransformsAndRecordsSingleUndoAction() {
     PipelineMeta pipeline = new PipelineMeta();
