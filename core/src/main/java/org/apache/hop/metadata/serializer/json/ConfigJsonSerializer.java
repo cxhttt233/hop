@@ -175,7 +175,8 @@ public final class ConfigJsonSerializer {
     }
     if (List.class.equals(type)) {
       if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) {
-        throw new HopException("Config list property '" + key(property, field) + "' has no item type");
+        throw new HopException(
+            "Config list property '" + key(property, field) + "' has no item type");
       }
       Class<?> itemType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
       java.util.ArrayList<Object> values = new java.util.ArrayList<>();
