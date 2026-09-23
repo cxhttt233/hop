@@ -52,12 +52,7 @@ public class PipelineEditor {
 
   /** Removes an existing hop as one undoable operation. */
   public boolean deleteHop(String fromName, String toName) {
-    TransformMeta from = pipelineMeta.findTransform(fromName);
-    TransformMeta to = pipelineMeta.findTransform(toName);
-    if (from == null || to == null) {
-      return false;
-    }
-    PipelineHopMeta hop = pipelineMeta.findPipelineHop(from, to);
+    PipelineHopMeta hop = findHop(fromName, toName);
     if (hop == null) {
       return false;
     }
@@ -68,6 +63,49 @@ public class PipelineEditor {
         new Object[] {hop}, null, new int[] {position}, null, null, AbstractMeta.TYPE_UNDO_DELETE, false);
     pipelineMeta.setChanged();
     return true;
+  }
+
+  /** Enables or disables an existing hop and records the change for undo. */
+  public boolean setHopEnabled(String fromName, String toName, boolean enabled) {
+    PipelineHopMeta hop = findHop(fromName, toName);
+    if (hop == null || hop.isEnabled() == enabled) {
+      return false;
+    }
+    PipelineHopMeta before = hop.clone();
+    hop.setEnabled(enabled);
+    recordHopChange(hop, before);
+    return true;
+  }
+
+  /** Reverses an existing hop when the reverse edge does not already exist. */
+  public boolean flipHop(String fromName, String toName) {
+    PipelineHopMeta hop = findHop(fromName, toName);
+    if (hop == null || pipelineMeta.findPipelineHop(hop.getToTransform(), hop.getFromTransform()) != null) {
+      return false;
+    }
+    PipelineHopMeta before = hop.clone();
+    hop.flip();
+    recordHopChange(hop, before);
+    return true;
+  }
+
+  private PipelineHopMeta findHop(String fromName, String toName) {
+    TransformMeta from = pipelineMeta.findTransform(fromName);
+    TransformMeta to = pipelineMeta.findTransform(toName);
+    return from == null || to == null ? null : pipelineMeta.findPipelineHop(from, to);
+  }
+
+  private void recordHopChange(PipelineHopMeta hop, PipelineHopMeta before) {
+    int position = pipelineMeta.getPipelineHops().indexOf(hop);
+    pipelineMeta.addUndo(
+        new Object[] {hop},
+        new Object[] {before},
+        new int[] {position},
+        null,
+        null,
+        AbstractMeta.TYPE_UNDO_CHANGE,
+        false);
+    pipelineMeta.setChanged();
   }
 
   /** Moves the named transforms as one undoable operation. */
