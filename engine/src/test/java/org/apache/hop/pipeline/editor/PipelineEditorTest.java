@@ -150,6 +150,57 @@ class PipelineEditorTest {
     assertEquals(new Point(3, 4), first.getLocation());
   }
 
+  @Test
+  void undoesAndRedoesTransformDeleteWithAttachedHop() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    assertNotNull(editor.addHop("first", "second"));
+    pipeline.clearUndo();
+
+    assertEquals(true, editor.deleteTransform("first"));
+    assertEquals(true, editor.undo());
+    assertNotNull(pipeline.findTransform("first"));
+    assertEquals(1, pipeline.nrPipelineHops());
+    assertEquals(true, editor.redo());
+    assertEquals(null, pipeline.findTransform("first"));
+    assertEquals(0, pipeline.nrPipelineHops());
+  }
+
+  @Test
+  void undoesAndRedoesMoveAndHopMutation() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+
+    assertEquals(1, editor.moveTransforms(List.of("first"), 5, 6));
+    assertEquals(true, editor.undo());
+    assertEquals(new Point(10, 20), pipeline.findTransform("first").getLocation());
+    assertEquals(true, editor.redo());
+    assertEquals(new Point(15, 26), pipeline.findTransform("first").getLocation());
+
+    assertNotNull(editor.addHop("first", "second"));
+    pipeline.clearUndo();
+    assertEquals(true, editor.setHopEnabled("first", "second", false));
+    assertEquals(true, editor.undo());
+    assertEquals(
+        true,
+        pipeline
+            .findPipelineHop(pipeline.findTransform("first"), pipeline.findTransform("second"))
+            .isEnabled());
+    assertEquals(true, editor.redo());
+    assertEquals(
+        false,
+        pipeline
+            .findPipelineHop(pipeline.findTransform("first"), pipeline.findTransform("second"))
+            .isEnabled());
+  }
+
+  @Test
+  void undoRedoReturnFalseWhenHistoryIsEmpty() {
+    PipelineEditor editor = new PipelineEditor(pipelineWithTwoTransforms());
+    assertEquals(false, editor.undo());
+    assertEquals(false, editor.redo());
+  }
+
   private static PipelineMeta pipelineWithTwoTransforms() {
     PipelineMeta pipeline = new PipelineMeta();
     pipeline.addTransform(transform("first", 10, 20));

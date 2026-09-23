@@ -23,16 +23,18 @@
 - 已按 A5 新增 SWT-free `PipelineEditor`，实现 `moveTransforms`，支持批量移动、边界裁剪、重复/未知节点过滤，并记录单个 `PositionTransform` undo action。
 - 已实现 `addHop` / `deleteHop`，校验节点存在、自连接和重复 hop，并记录 `NewPipelineHop` / `DeletePipelineHop` undo action。
 - 已实现 `setHopEnabled` / `flipHop`：复用 `PipelineHopMeta` 原生语义，拒绝 no-op、未知 hop 和反向边冲突；变更前后均 clone 快照并记录 `ChangePipelineHop` undo action。
-- 本轮新增 `deleteTransform`：删除 Transform 时同步清理关联 Hop，并用 linked `DeletePipelineHop` + `DeleteTransform` ChangeAction 保留可恢复的图结构与原索引。
+- 已实现 `deleteTransform`：删除 Transform 时同步清理关联 Hop，并用 linked `DeletePipelineHop` + `DeleteTransform` ChangeAction 保留可恢复的图结构与原索引。
+- 本轮新增 R10 SWT-free `PipelineUndoApplier` 与 `PipelineEditor.undo/redo`，覆盖 transform/hop 新增删除、hop 变更、transform 位置，并支持 linked ChangeAction 组合动作。
 - 已补 hop mutation 单元测试，并修正测试中 ActionType 为当前源码实际枚举名。
 
 ## 下一步
-- 等待本轮提交的 Actions 验证；若失败先修复真实原因。
-- 继续架构 R10 要求的 SWT-free undo/redo 应用层，并以 transform+hop 联动删除作为首个组合动作验证。
+- 等待本轮 R10 undo/redo 提交的 Actions 验证；若失败先修复真实原因。
+- Actions 通过后继续补齐 Transform 新增/变更命令，并进入 SVG render snapshot / Save 的紧邻切片。
 - `web/api` 骨架落地后再接 DocumentResource，不越界代替任务 1。
 
 ## 最近提交
-- 本轮待提交：transform 删除命令及 linked undo 测试。
+- 本轮待提交：R10 SWT-free undo/redo applier、组合动作与 move/hop mutation 往返测试。
+- `e2539309 feat: add headless pipeline transform delete`。
 - `a47c93fd fix: snapshot pipeline hop change undo state`。
 - `be5b68a9 fix: use pipeline hop undo action types`。
 - `3a95d3b5 test: cover headless pipeline hop mutations`。
@@ -40,7 +42,8 @@
 
 ## Actions
 - `346add6d` 的 Hop PR Build (Code) run `35867287340`：success。
-- 本轮新提交已 push；当前 commit status 尚未返回检查结果，后续轮次继续跟踪。
+- `e2539309` 已 push；GitHub combined status 当前尚无 status context。
+- 本轮 R10 提交完成后由 GitHub Actions 继续权威验证。
 - 本机 Maven wrapper 默认缓存无写权限且 `JAVA_HOME` 未配置，因此仍以 GitHub Actions 为权威验证。
 
 ## 架构文档对应章节

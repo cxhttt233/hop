@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.hop.base.AbstractMeta;
 import org.apache.hop.core.gui.Point;
+import org.apache.hop.core.undo.ChangeAction;
 import org.apache.hop.pipeline.PipelineHopMeta;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -28,9 +29,35 @@ import org.apache.hop.pipeline.transform.TransformMeta;
 /** SWT-free editing operations shared by web and desktop pipeline editors. */
 public class PipelineEditor {
   private final PipelineMeta pipelineMeta;
+  private final PipelineUndoApplier undoApplier;
 
   public PipelineEditor(PipelineMeta pipelineMeta) {
     this.pipelineMeta = Objects.requireNonNull(pipelineMeta, "pipelineMeta");
+    this.undoApplier = new PipelineUndoApplier(pipelineMeta);
+  }
+
+  /** Applies the most recent command, including linked actions, in reverse. */
+  public boolean undo() {
+    ChangeAction action = pipelineMeta.previousUndo();
+    if (action == null) return false;
+    undoApplier.apply(action, true);
+    while (pipelineMeta.viewThisUndo() != null && pipelineMeta.viewThisUndo().getNextAlso()) {
+      undoApplier.apply(pipelineMeta.previousUndo(), true);
+    }
+    return true;
+  }
+
+  /** Re-applies the next command, including linked actions. */
+  public boolean redo() {
+    ChangeAction action = pipelineMeta.nextUndo();
+    if (action == null) return false;
+    undoApplier.apply(action, false);
+    while (action.getNextAlso()) {
+      action = pipelineMeta.nextUndo();
+      if (action == null) break;
+      undoApplier.apply(action, false);
+    }
+    return true;
   }
 
   /** Adds a hop between two existing transforms as one undoable operation. */
