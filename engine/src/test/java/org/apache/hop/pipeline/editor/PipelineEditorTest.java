@@ -30,13 +30,7 @@ import org.junit.jupiter.api.Test;
 class PipelineEditorTest {
   @Test
   void addsAndDeletesHopWithUndoRecords() {
-    PipelineMeta pipeline = new PipelineMeta();
-    TransformMeta first = transform("first", 10, 20);
-    TransformMeta second = transform("second", 30, 40);
-    pipeline.addTransform(first);
-    pipeline.addTransform(second);
-    pipeline.clearUndo();
-    pipeline.clearChanged();
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
     PipelineEditor editor = new PipelineEditor(pipeline);
 
     PipelineHopMeta hop = editor.addHop("first", "second");
@@ -51,10 +45,45 @@ class PipelineEditorTest {
   }
 
   @Test
+  void enablesDisablesAndFlipsHopWithUndoRecords() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    PipelineHopMeta hop = editor.addHop("first", "second");
+    pipeline.clearUndo();
+
+    assertEquals(true, editor.setHopEnabled("first", "second", false));
+    assertEquals(false, hop.isEnabled());
+    assertEquals(ChangeAction.ActionType.ChangeHop, pipeline.previousUndo().getType());
+
+    pipeline.clearUndo();
+    assertEquals(true, editor.flipHop("first", "second"));
+    assertEquals("second", hop.getFromTransform().getName());
+    assertEquals("first", hop.getToTransform().getName());
+    assertEquals(ChangeAction.ActionType.ChangeHop, pipeline.previousUndo().getType());
+  }
+
+  @Test
+  void rejectsNoOpOrConflictingHopMutations() {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    PipelineHopMeta forward = editor.addHop("first", "second");
+    assertNotNull(forward);
+
+    pipeline.clearUndo();
+    assertEquals(false, editor.setHopEnabled("missing", "second", false));
+    assertEquals(false, editor.setHopEnabled("first", "second", true));
+    assertEquals(false, editor.flipHop("missing", "second"));
+
+    forward.setEnabled(false);
+    assertNotNull(editor.addHop("second", "first"));
+    pipeline.clearUndo();
+    assertEquals(false, editor.flipHop("first", "second"));
+    assertEquals(null, pipeline.previousUndo());
+  }
+
+  @Test
   void rejectsInvalidOrDuplicateHops() {
-    PipelineMeta pipeline = new PipelineMeta();
-    pipeline.addTransform(transform("first", 0, 0));
-    pipeline.addTransform(transform("second", 10, 10));
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
     PipelineEditor editor = new PipelineEditor(pipeline);
 
     assertEquals(null, editor.addHop("missing", "second"));
@@ -66,13 +95,9 @@ class PipelineEditorTest {
 
   @Test
   void movesTransformsAndRecordsSingleUndoAction() {
-    PipelineMeta pipeline = new PipelineMeta();
-    TransformMeta first = transform("first", 10, 20);
-    TransformMeta second = transform("second", 30, 40);
-    pipeline.addTransform(first);
-    pipeline.addTransform(second);
-    pipeline.clearUndo();
-    pipeline.clearChanged();
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    TransformMeta first = pipeline.findTransform("first");
+    TransformMeta second = pipeline.findTransform("second");
 
     int moved = new PipelineEditor(pipeline).moveTransforms(List.of("first", "second"), 5, -10);
 
@@ -96,6 +121,15 @@ class PipelineEditorTest {
     assertEquals(0, editor.moveTransforms(List.of("first"), -5, -5));
     assertEquals(1, editor.moveTransforms(List.of("first", "first"), 3, 4));
     assertEquals(new Point(3, 4), first.getLocation());
+  }
+
+  private static PipelineMeta pipelineWithTwoTransforms() {
+    PipelineMeta pipeline = new PipelineMeta();
+    pipeline.addTransform(transform("first", 10, 20));
+    pipeline.addTransform(transform("second", 30, 40));
+    pipeline.clearUndo();
+    pipeline.clearChanged();
+    return pipeline;
   }
 
   private static TransformMeta transform(String name, int x, int y) {
