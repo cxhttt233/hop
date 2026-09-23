@@ -167,6 +167,8 @@ under the License.
   - Apache 社区先例：Superset、Airflow 3 均为 React；许可证均为 MIT（ASF Category A）。
 - **Vue 3 + Vue Flow 是可接受的替代**（Vue Flow 是 React Flow 的移植，Naive UI/Element Plus 生态成熟）。若实施团队的技能栈以 Vue 为主，应在 PoC 立项时一次性决定，之后不再摇摆；本方案后文以 React 术语描述，但不含任何 React 专属契约。
 - UI 组件库选择 MIT 许可的（Ant Design / Radix+shadcn / MUI 均可），并把设计 token 独立成层，保持可替换。
+- **交互符合直觉**：在尽量减少不必要文字说明的情况下，用户仍能自然理解页面功能、操作方式和当前状态；高频操作应直接、清晰，避免多余步骤和无意义跳转。
+- **前端体验属于验收条件**：信息层级与组件风格保持一致，并进行实际页面和交互检查；功能可用但 UI/UX 明显不合理，不视为完成。
 - 构建：`web/app` 为独立 npm 工程（`pnpm` 或 `npm ci`），通过 `frontend-maven-plugin` 固定 Node 版本嵌入 Maven 构建，产物打进 `hop-web-app.jar` 的 `META-INF/resources/`（Servlet 3+ 静态资源）或 war 的 `/app/`。Hop 已用 `download-maven-plugin` 在构建期拉取 Monaco，证明"构建期取前端产物"在上游是可接受的。
 
 ### 2.3 画布：服务端权威 SVG 渲染 + 客户端交互层
