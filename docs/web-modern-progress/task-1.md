@@ -1,3 +1,10 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements. See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0.
+-->
+
 # Task 1 - Web 基础设施 / Maven / Session / Security / Project / Environment / VFS
 
 状态：进行中
