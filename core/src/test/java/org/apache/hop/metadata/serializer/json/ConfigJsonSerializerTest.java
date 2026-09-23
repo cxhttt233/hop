@@ -67,7 +67,9 @@ class ConfigJsonSerializerTest {
   }
 
   static class SampleConfig {
-    @HopMetadataProperty(key = "file_name") String name;
+    @HopMetadataProperty(key = "file_name")
+    String name;
+
     @HopMetadataProperty int limit;
     @HopMetadataProperty(defaultBoolean = true) boolean enabled;
     @HopMetadataProperty(storeWithCode = true) Mode mode;
