@@ -33,7 +33,8 @@
 
 ## 下一步
 - 继续观察本分支 Code Actions；当前 fork 的 `gh run list --branch experiment/web-modern-task-4` 暂未返回新 run。
-- 在现有生命周期核心上实现日志/metrics 事件生产；随后接 Jersey SSE resource、15s 心跳和 `Last-Event-ID` 重连。
+- 已实现 1s `ExecutionMetricsPublisher`，从现有引擎 `getEngineMetrics()/getComponents()` 采集 Execution UI 所需组件指标并写入执行事件缓冲。
+- 下一步实现日志事件生产；随后接 Jersey SSE resource、15s 心跳和 `Last-Event-ID` 重连。
 
 ## 最近提交
 - `fix(web): pin junit version for api module`（已 push）
