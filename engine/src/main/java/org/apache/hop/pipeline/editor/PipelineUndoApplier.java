@@ -38,8 +38,9 @@ final class PipelineUndoApplier {
       case DeletePipelineHop -> applyHopCreateDelete(action, !undo);
       case ChangePipelineHop -> applyHopChange(action, undo);
       case PositionTransform -> applyTransformPosition(action, undo);
-      default -> throw new IllegalArgumentException(
-          "Unsupported pipeline undo action: " + action.getType());
+      default ->
+          throw new IllegalArgumentException(
+              "Unsupported pipeline undo action: " + action.getType());
     }
     pipeline.setChanged();
   }
