@@ -45,9 +45,9 @@ Evidence commits：`e61d515bca`、`f99620e679`、`6ccae95afa5e0dbd3985563ad36b6e
 
 已确认：
 - SWT-free Pipeline 编辑命令与 undo/redo 已形成连贯实现，覆盖 transform/hop 核心编辑语义。
-- `6ccae95afa` Code Actions 成功，R1 已满足当前 Package 的核心验收。
+- `6ccae95afa` Code Actions 成功，R1 已满足当前 Package 的核心验收并通过 Controller Gate Review。
 
-Integration status：**READY_FOR_GATE_REVIEW**。
+Integration status：**GATE_REVIEW_PASSED / ADMISSION_ORDER_DEFERRED**。
 
 ### Task 3 — Config / Schema / Plugin Web
 
@@ -55,30 +55,32 @@ Evidence commit：`55497fc98a8cdc6ff655a859ed85d1f06fef899d`。
 
 已确认：
 - A2 Config JSON transport 已有功能基础。
-- provider-aware named metadata read、password/sensitive transport、代表性真实 Meta 验证仍是当前验收缺口。
+- provider-aware named metadata read、password/sensitive transport、代表性真实 Meta 验证仍是当前验收缺口；Worker 已有后续实现提交，但在 Actions 收敛前不提升为稳定事实。
 
 Integration status：**IN_PROGRESS / PACKAGE_NOT_YET_CLOSED**。
 
 ### Task 4 — Execution / SPA / SSE
 
-Evidence commits：`3bf1d280cfce65a2fb4b6992f30275fa8702c634`、`525c8781bd08f962990cec0676141d3a7169061f`。
+Evidence commits：`3bf1d280cfce65a2fb4b6992f30275fa8702c634`、`525c8781bd08f962990cec0676141d3a7169061f`、PoC migration `915ba62fa169437c6dea326940ec6ba81ef417ed`。
 
 已确认：
 - ExecutionRegistry、ExecutionEventBuffer/replay、lifecycle、Log、Metrics 已形成连贯领域实现与测试。
-- `525c8781bd` Code Actions 成功，当前 execution backend domain candidate 验证完成。
-- 根级 `hop-web-api` 是临时载体，不能进入 PoC；只迁移领域类/测试到正式 `web/api`。
+- `525c8781bd` Code Actions 成功，execution backend domain candidate 验证完成。
+- 根级 `hop-web-api` 临时载体已被丢弃；Controller 仅将 `org/apache/hop/web/api/execution/*` 领域类/测试迁入 PoC 正式 `web/api`，并补齐正式 carrier 所需依赖。
+- 迁移后的 PoC GitHub Actions 是最终 admission 门禁。
 
-Integration status：**DOMAIN_VALIDATED / MIGRATION_REQUIRED**。
+Integration status：**MIGRATED_TO_FORMAL_WEB_API / REVALIDATION_PENDING**。
 
 ## Current PoC State
 
 - Task 1 Web Foundation 已正式纳入 PoC。
-- 下一关键动作：迁移 Task 4 execution-domain 类/测试到正式 `web/api`，丢弃根级临时模块布局并重新验证。
-- Task 2 R1 已转为 Gate Review 候选；Task 3 继续 A2。
+- Task 4 execution domain 已迁入正式 `web/api`，等待 migration commit `915ba62f` 的 GitHub Actions revalidation 后确认 admission。
+- Task 2 R1 已通过 Gate Review，按集成顺序等待 Task 4 migration revalidation 后进入 PoC。
+- Task 1 R2、Task 2 R2、Task 3 A2、Task 4 R2 可并行推进。
 
 ## Current Critical Path
 
-`Task 1 foundation admitted → migrate Task 4 execution-domain into formal web/api → revalidate → first cross-task PoC slice`
+`Task 1 foundation admitted → Task 4 execution-domain migrated → GitHub Actions revalidation → admit Task 4 R1 → admit Task 2 R1 → first cross-task PoC slice`
 
 ## Context Hygiene
 
