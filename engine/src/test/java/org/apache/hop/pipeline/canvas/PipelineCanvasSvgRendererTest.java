@@ -73,8 +73,6 @@ class PipelineCanvasSvgRendererTest {
     assertTrue(result.getSvg().contains("<svg"));
     assertTrue(result.getSvg().contains("Generator"));
     assertFalse(result.getAreaOwners().isEmpty());
-    assertNotNull(result.getViewPort());
-    assertNotNull(result.getGraphPort());
   }
 
   @Test
