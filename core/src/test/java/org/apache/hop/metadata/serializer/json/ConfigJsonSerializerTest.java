@@ -63,6 +63,23 @@ class ConfigJsonSerializerTest {
   }
 
   @Test
+  void roundTripsGroupedListUsingMetadataGroupKey() throws Exception {
+    GroupedConfig config = new GroupedConfig();
+    config.fields.add(new Item("first", 1));
+    config.fields.add(new Item("second", 2));
+
+    ObjectNode json = ConfigJsonSerializer.toJson(config);
+
+    assertEquals("first", json.get("fields").get("field").get(0).get("name").asText());
+    assertFalse(json.has("field"));
+
+    GroupedConfig restored = ConfigJsonSerializer.fromJson(json, GroupedConfig.class);
+    assertEquals(2, restored.fields.size());
+    assertEquals("second", restored.fields.get(1).name);
+    assertEquals(2, restored.fields.get(1).ordinal);
+  }
+
+  @Test
   void missingBooleanUsesMetadataDefault() throws Exception {
     ObjectNode json = ConfigJsonSerializer.toJson(new SampleConfig());
     json.remove("enabled");
@@ -124,6 +141,11 @@ class ConfigJsonSerializerTest {
     String ignored;
 
     SampleConfig() {}
+  }
+
+  static class GroupedConfig {
+    @HopMetadataProperty(key = "field", groupKey = "fields")
+    List<Item> fields = new ArrayList<>();
   }
 
   static class SensitiveConfig {
