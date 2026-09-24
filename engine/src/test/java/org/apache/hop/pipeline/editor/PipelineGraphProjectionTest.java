@@ -17,6 +17,7 @@
 package org.apache.hop.pipeline.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.apache.hop.core.variables.Variables;
@@ -51,14 +52,32 @@ class PipelineGraphProjectionTest {
                 new PipelineGraphProjection.Edge(
                     "first->second", "first", "second", false)));
     assertEquals(expected, PipelineGraphProjection.project(pipeline));
+    assertEquals(expected, PipelineGraphProjection.project(reload(pipeline)));
+  }
 
+  @Test
+  void preservesAddDeleteAndUndoAcrossReload() throws Exception {
+    PipelineMeta pipeline = new PipelineMeta();
+    pipeline.addTransform(transform("first", "MockFirst", 10, 20));
+    pipeline.clearUndo();
+    pipeline.clearChanged();
+
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    assertTrue(editor.addTransform(transform("second", "MockSecond", 30, 40)));
+    editor.addHop("first", "second");
+    PipelineGraphProjection.Graph connected = PipelineGraphProjection.project(pipeline);
+
+    assertTrue(editor.deleteTransform("second"));
+    assertTrue(editor.undo());
+    assertEquals(connected, PipelineGraphProjection.project(pipeline));
+    assertEquals(connected, PipelineGraphProjection.project(reload(pipeline)));
+  }
+
+  private static PipelineMeta reload(PipelineMeta pipeline) throws Exception {
     Variables variables = new Variables();
     String xml = pipeline.getXml(variables);
-    PipelineMeta reloaded =
-        new PipelineMeta(
-            XmlHandler.loadXmlString(xml, PipelineMeta.XML_TAG), new MemoryMetadataProvider());
-
-    assertEquals(expected, PipelineGraphProjection.project(reloaded));
+    return new PipelineMeta(
+        XmlHandler.loadXmlString(xml, PipelineMeta.XML_TAG), new MemoryMetadataProvider());
   }
 
   private static TransformMeta transform(String name, String pluginId, int x, int y) {
