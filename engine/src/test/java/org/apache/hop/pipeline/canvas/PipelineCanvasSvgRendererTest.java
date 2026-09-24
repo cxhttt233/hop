@@ -44,7 +44,8 @@ class PipelineCanvasSvgRendererTest {
     transform.setLocation(100, 100);
     pipelineMeta.addTransform(transform);
 
-    CanvasSvgRenderResult result = PipelineCanvasSvgRenderer.render(contextFor(pipelineMeta, 800, 600));
+    CanvasSvgRenderResult result =
+        PipelineCanvasSvgRenderer.render(contextFor(pipelineMeta, 800, 600));
 
     assertNotNull(result);
     assertNotNull(result.getSvg());
@@ -65,7 +66,8 @@ class PipelineCanvasSvgRendererTest {
     PipelineEditor editor = new PipelineEditor(pipelineMeta);
     assertEquals(1, editor.moveTransforms(List.of("Generator"), 80, 40));
 
-    CanvasSvgRenderResult result = PipelineCanvasSvgRenderer.render(contextFor(pipelineMeta, 800, 600));
+    CanvasSvgRenderResult result =
+        PipelineCanvasSvgRenderer.render(contextFor(pipelineMeta, 800, 600));
 
     assertEquals(new Point(180, 140), transform.getLocation());
     assertTrue(result.getSvg().contains("<svg"));
