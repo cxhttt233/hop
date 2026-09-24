@@ -17,6 +17,7 @@
 package org.apache.hop.web.api.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -77,6 +78,38 @@ class PipelineExecutionLifecycleTest {
     finishedListener.get().finished(engine);
     assertTrue(entry.completedAt().isPresent());
     assertEquals("finished", entry.events().replayAfter(2).getFirst().type());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void recordsStartupFailureAndCompletesExecution() {
+    IPipelineEngine<PipelineMeta> engine =
+        (IPipelineEngine<PipelineMeta>)
+            Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class<?>[] {IPipelineEngine.class},
+                (proxy, method, args) -> {
+                  if (method.getName().equals("prepareExecution")) {
+                    throw new org.apache.hop.core.exception.HopException("startup failed");
+                  }
+                  return defaultValue(method.getReturnType());
+                });
+    ExecutionRegistry<IPipelineEngine<PipelineMeta>> registry =
+        new ExecutionRegistry<>(Duration.ofHours(1), 8);
+    ExecutionRegistry.Entry<IPipelineEngine<PipelineMeta>> entry =
+        registry.register("run-failed", "alice", engine);
+
+    assertThrows(
+        org.apache.hop.core.exception.HopException.class,
+        () -> PipelineExecutionLifecycle.start("run-failed", registry));
+
+    assertTrue(entry.completedAt().isPresent());
+    assertEquals(
+        List.of("state", "error"),
+        entry.events().replayAfter(0).stream().map(ExecutionEvent::type).toList());
+    PipelineExecutionLifecycle.ErrorEvent error =
+        (PipelineExecutionLifecycle.ErrorEvent) entry.events().replayAfter(1).getFirst().payload();
+    assertTrue(error.message().contains("startup failed"));
   }
 
   private static Object defaultValue(Class<?> type) {

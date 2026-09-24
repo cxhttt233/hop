@@ -39,10 +39,18 @@ public final class PipelineExecutionLifecycle {
           registry.markCompleted(id);
         });
     entry.events().append("state", "preparing");
-    engine.prepareExecution();
-    entry.events().append("state", "running");
-    engine.startThreads();
+    try {
+      engine.prepareExecution();
+      entry.events().append("state", "running");
+      engine.startThreads();
+    } catch (HopException e) {
+      entry.events().append("error", new ErrorEvent(e.getMessage()));
+      registry.markCompleted(id);
+      throw e;
+    }
   }
 
   public record FinishedEvent(int errors, boolean stopped) {}
+
+  public record ErrorEvent(String message) {}
 }
