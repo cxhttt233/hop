@@ -28,5 +28,6 @@
   <name>Hop Modern Web</name>
   <modules>
     <module>api</module>
+    <module>security</module>
   </modules>
 </project>
