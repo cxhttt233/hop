@@ -259,7 +259,8 @@ class PipelineEditorTest {
     TransformMeta transform = new TransformMeta();
     transform.setName(name);
     // Native PipelineMeta XML requires a transform type even when the plugin is unavailable.
-    // A stable missing-plugin id exercises Hop's preservation path without coupling this engine test
+    // A stable missing-plugin id exercises Hop's preservation path without coupling this engine
+    // test
     // to a concrete transform plugin module.
     transform.setTransformPluginId("ModernWebTestTransform");
     transform.setLocation(x, y);
