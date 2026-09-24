@@ -659,6 +659,13 @@
     </reporting>
 
     <profiles>
+        <!-- Modern Web modules stay opt-in while the replacement UI is developed. -->
+        <profile>
+            <id>web-next</id>
+            <modules>
+                <module>web</module>
+            </modules>
+        </profile>
         <profile>
             <id>fast-build</id>
             <properties>
