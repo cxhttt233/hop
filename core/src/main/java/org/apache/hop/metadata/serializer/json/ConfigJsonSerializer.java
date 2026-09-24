@@ -23,11 +23,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.metadata.api.HopMetadataObject;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IEnumHasCode;
 import org.apache.hop.metadata.api.IHopMetadata;
+import org.apache.hop.metadata.api.IHopMetadataObjectFactory;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.api.IHopMetadataSerializer;
 import org.apache.hop.metadata.util.ReflectionUtil;
@@ -104,6 +107,7 @@ public final class ConfigJsonSerializer {
     }
     if (value instanceof List<?> list) {
       ArrayNode array = MAPPER.createArrayNode();
+      Class<?> itemType = listItemType(field);
       for (Object item : list) {
         if (item == null) {
           array.addNull();
@@ -114,7 +118,7 @@ public final class ConfigJsonSerializer {
         } else if (item instanceof Enum<?> enumItem) {
           array.add(enumItem.name());
         } else {
-          array.add(writeObject(item, metadataProvider));
+          array.add(writePojo(item, itemType, metadataProvider));
         }
       }
       return array;
@@ -137,7 +141,27 @@ public final class ConfigJsonSerializer {
     if (value instanceof String || value instanceof Number || value instanceof Boolean) {
       return MAPPER.valueToTree(value);
     }
-    return writeObject(value, metadataProvider);
+    return writePojo(value, field.getType(), metadataProvider);
+  }
+
+  private static ObjectNode writePojo(
+      Object value, Class<?> declaredType, IHopMetadataProvider metadataProvider)
+      throws HopException {
+    ObjectNode properties = writeObject(value, metadataProvider);
+    HopMetadataObject metadataObject = declaredType.getAnnotation(HopMetadataObject.class);
+    if (metadataObject == null) {
+      return properties;
+    }
+    try {
+      IHopMetadataObjectFactory factory =
+          metadataObject.objectFactory().getDeclaredConstructor().newInstance();
+      String id = factory.getObjectId(value);
+      ObjectNode wrapper = MAPPER.createObjectNode();
+      wrapper.set(id, properties);
+      return wrapper;
+    } catch (Exception e) {
+      throw new HopException("Unable to serialize factory-backed config object " + declaredType.getName(), e);
+    }
   }
 
   private static void readObject(
@@ -214,11 +238,7 @@ public final class ConfigJsonSerializer {
       return Enum.valueOf((Class<? extends Enum>) type, node.asText());
     }
     if (List.class.equals(type)) {
-      if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) {
-        throw new HopException(
-            "Config list property '" + key(property, field) + "' has no item type");
-      }
-      Class<?> itemType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+      Class<?> itemType = listItemType(field);
       java.util.ArrayList<Object> values = new java.util.ArrayList<>();
       for (JsonNode item : node) {
         if (property.storeWithName()) {
@@ -228,27 +248,51 @@ public final class ConfigJsonSerializer {
         } else if (Integer.class.equals(itemType)) {
           values.add(item.asInt());
         } else {
-          Object child;
-          try {
-            child = itemType.getDeclaredConstructor().newInstance();
-          } catch (Exception e) {
-            throw new HopException("Unable to create config list item " + itemType.getName(), e);
-          }
-          readObject(item, child, metadataProvider);
-          values.add(child);
+          values.add(readPojo(item, itemType, metadataProvider));
         }
       }
       return values;
     }
+    return readPojo(node, type, metadataProvider);
+  }
+
+  private static Object readPojo(
+      JsonNode node, Class<?> declaredType, IHopMetadataProvider metadataProvider)
+      throws HopException {
     try {
-      Object child = type.getDeclaredConstructor().newInstance();
-      readObject(node, child, metadataProvider);
+      HopMetadataObject metadataObject = declaredType.getAnnotation(HopMetadataObject.class);
+      Object child;
+      JsonNode properties = node;
+      if (metadataObject == null) {
+        child = declaredType.getDeclaredConstructor().newInstance();
+      } else {
+        if (!node.isObject() || node.size() != 1) {
+          throw new HopException(
+              "Factory-backed config property " + declaredType.getName() + " must contain one object id");
+        }
+        Map.Entry<String, JsonNode> entry = node.fields().next();
+        IHopMetadataObjectFactory factory =
+            metadataObject.objectFactory().getDeclaredConstructor().newInstance();
+        child = factory.createObject(entry.getKey(), null);
+        properties = entry.getValue();
+      }
+      readObject(properties, child, metadataProvider);
       return child;
     } catch (HopException e) {
       throw e;
     } catch (Exception e) {
-      throw new HopException("Unable to create nested config property " + type.getName(), e);
+      throw new HopException("Unable to create nested config property " + declaredType.getName(), e);
     }
+  }
+
+  private static Class<?> listItemType(Field field) throws HopException {
+    if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) {
+      throw new HopException("Config list property '" + field.getName() + "' has no item type");
+    }
+    if (!(parameterizedType.getActualTypeArguments()[0] instanceof Class<?> itemType)) {
+      throw new HopException("Config list property '" + field.getName() + "' has unsupported item type");
+    }
+    return itemType;
   }
 
   @SuppressWarnings("unchecked")
