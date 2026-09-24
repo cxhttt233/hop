@@ -27,6 +27,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IEnumHasCode;
+import org.apache.hop.metadata.api.IHopMetadata;
+import org.apache.hop.metadata.api.IHopMetadataProvider;
+import org.apache.hop.metadata.api.IHopMetadataSerializer;
 import org.apache.hop.metadata.util.ReflectionUtil;
 
 /**
@@ -42,16 +45,26 @@ public final class ConfigJsonSerializer {
   private ConfigJsonSerializer() {}
 
   public static ObjectNode toJson(Object config) throws HopException {
+    return toJson(config, null);
+  }
+
+  public static ObjectNode toJson(Object config, IHopMetadataProvider metadataProvider)
+      throws HopException {
     if (config == null) {
       return MAPPER.createObjectNode();
     }
-    return writeObject(config);
+    return writeObject(config, metadataProvider);
   }
 
   public static <T> T fromJson(JsonNode json, Class<T> type) throws HopException {
+    return fromJson(json, type, null);
+  }
+
+  public static <T> T fromJson(
+      JsonNode json, Class<T> type, IHopMetadataProvider metadataProvider) throws HopException {
     try {
       T value = type.getDeclaredConstructor().newInstance();
-      readObject(json, value);
+      readObject(json, value, metadataProvider);
       return value;
     } catch (HopException e) {
       throw e;
@@ -60,7 +73,8 @@ public final class ConfigJsonSerializer {
     }
   }
 
-  private static ObjectNode writeObject(Object value) throws HopException {
+  private static ObjectNode writeObject(Object value, IHopMetadataProvider metadataProvider)
+      throws HopException {
     ObjectNode result = MAPPER.createObjectNode();
     for (Field field : ReflectionUtil.findAllFields(value.getClass())) {
       HopMetadataProperty property = field.getAnnotation(HopMetadataProperty.class);
@@ -70,7 +84,7 @@ public final class ConfigJsonSerializer {
       String key = key(property, field);
       try {
         Object fieldValue = ReflectionUtil.getFieldValue(value, field.getName(), isBoolean(field));
-        result.set(key, writeValue(fieldValue, field, property));
+        result.set(key, writeValue(fieldValue, field, property, metadataProvider));
       } catch (Exception e) {
         throw new HopException("Unable to serialize config property '" + key + "'", e);
       }
@@ -78,10 +92,31 @@ public final class ConfigJsonSerializer {
     return result;
   }
 
-  private static JsonNode writeValue(Object value, Field field, HopMetadataProperty property)
+  private static JsonNode writeValue(
+      Object value,
+      Field field,
+      HopMetadataProperty property,
+      IHopMetadataProvider metadataProvider)
       throws HopException {
     if (value == null) {
       return MAPPER.nullNode();
+    }
+    if (value instanceof List<?> list) {
+      ArrayNode array = MAPPER.createArrayNode();
+      for (Object item : list) {
+        if (item == null) {
+          array.addNull();
+        } else if (property.storeWithName()) {
+          array.add(ReflectionUtil.getObjectName(item));
+        } else if (item instanceof String || item instanceof Number || item instanceof Boolean) {
+          array.addPOJO(item);
+        } else if (item instanceof Enum<?> enumItem) {
+          array.add(enumItem.name());
+        } else {
+          array.add(writeObject(item, metadataProvider));
+        }
+      }
+      return array;
     }
     if (property.storeWithName()) {
       return MAPPER.valueToTree(ReflectionUtil.getObjectName(value));
@@ -92,28 +127,17 @@ public final class ConfigJsonSerializer {
       }
       return MAPPER.valueToTree(enumValue.name());
     }
+    if (value instanceof String stringValue && property.password()) {
+      return MAPPER.valueToTree(requireProvider(metadataProvider, field).getTwoWayPasswordEncoder().encode(stringValue, true));
+    }
     if (value instanceof String || value instanceof Number || value instanceof Boolean) {
       return MAPPER.valueToTree(value);
     }
-    if (value instanceof List<?> list) {
-      ArrayNode array = MAPPER.createArrayNode();
-      for (Object item : list) {
-        if (item == null) {
-          array.addNull();
-        } else if (item instanceof String || item instanceof Number || item instanceof Boolean) {
-          array.addPOJO(item);
-        } else if (item instanceof Enum<?> enumItem) {
-          array.add(enumItem.name());
-        } else {
-          array.add(writeObject(item));
-        }
-      }
-      return array;
-    }
-    return writeObject(value);
+    return writeObject(value, metadataProvider);
   }
 
-  private static void readObject(JsonNode json, Object target) throws HopException {
+  private static void readObject(
+      JsonNode json, Object target, IHopMetadataProvider metadataProvider) throws HopException {
     if (json == null || !json.isObject()) {
       throw new HopException("Config JSON must be an object");
     }
@@ -130,22 +154,30 @@ public final class ConfigJsonSerializer {
         }
         continue;
       }
-      if (property.storeWithName()) {
-        throw new HopException("Config property '" + key + "' is a named metadata reference");
-      }
-      set(target, field, readValue(node, field, property));
+      set(target, field, readValue(node, field, property, metadataProvider));
     }
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Object readValue(JsonNode node, Field field, HopMetadataProperty property)
+  private static Object readValue(
+      JsonNode node,
+      Field field,
+      HopMetadataProperty property,
+      IHopMetadataProvider metadataProvider)
       throws HopException {
     if (node.isNull()) {
       return null;
     }
     Class<?> type = field.getType();
+    if (property.storeWithName() && !List.class.equals(type)) {
+      return loadNamedReference(node.asText(), type, metadataProvider, field);
+    }
     if (String.class.equals(type)) {
-      return node.asText();
+      String value = node.asText();
+      if (property.password()) {
+        value = requireProvider(metadataProvider, field).getTwoWayPasswordEncoder().decode(value, true);
+      }
+      return value;
     }
     if (int.class.equals(type) || Integer.class.equals(type)) {
       return node.asInt();
@@ -181,7 +213,9 @@ public final class ConfigJsonSerializer {
       Class<?> itemType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
       java.util.ArrayList<Object> values = new java.util.ArrayList<>();
       for (JsonNode item : node) {
-        if (String.class.equals(itemType)) {
+        if (property.storeWithName()) {
+          values.add(loadNamedReference(item.asText(), itemType, metadataProvider, field));
+        } else if (String.class.equals(itemType)) {
           values.add(item.asText());
         } else if (Integer.class.equals(itemType)) {
           values.add(item.asInt());
@@ -192,7 +226,7 @@ public final class ConfigJsonSerializer {
           } catch (Exception e) {
             throw new HopException("Unable to create config list item " + itemType.getName(), e);
           }
-          readObject(item, child);
+          readObject(item, child, metadataProvider);
           values.add(child);
         }
       }
@@ -200,13 +234,44 @@ public final class ConfigJsonSerializer {
     }
     try {
       Object child = type.getDeclaredConstructor().newInstance();
-      readObject(node, child);
+      readObject(node, child, metadataProvider);
       return child;
     } catch (HopException e) {
       throw e;
     } catch (Exception e) {
       throw new HopException("Unable to create nested config property " + type.getName(), e);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Object loadNamedReference(
+      String name,
+      Class<?> type,
+      IHopMetadataProvider metadataProvider,
+      Field field)
+      throws HopException {
+    IHopMetadataProvider provider = requireProvider(metadataProvider, field);
+    if (!IHopMetadata.class.isAssignableFrom(type)) {
+      throw new HopException(
+          "Config property '"
+              + field.getName()
+              + "' uses storeWithName but type does not implement IHopMetadata: "
+              + type.getName());
+    }
+    IHopMetadataSerializer<?> serializer =
+        provider.getSerializer((Class<? extends IHopMetadata>) type);
+    return serializer.load(name);
+  }
+
+  private static IHopMetadataProvider requireProvider(
+      IHopMetadataProvider metadataProvider, Field field) throws HopException {
+    if (metadataProvider == null) {
+      throw new HopException(
+          "Config property '"
+              + field.getName()
+              + "' requires an IHopMetadataProvider for transport semantics");
+    }
+    return metadataProvider;
   }
 
   private static void set(Object target, Field field, Object value) throws HopException {
