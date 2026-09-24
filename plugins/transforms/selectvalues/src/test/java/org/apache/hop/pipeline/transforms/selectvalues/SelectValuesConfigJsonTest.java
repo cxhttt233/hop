@@ -37,10 +37,21 @@ class SelectValuesConfigJsonTest {
     DeleteField removed = new DeleteField();
     removed.setName("internal_note");
 
+    SelectMetadataChange metadataChange = new SelectMetadataChange();
+    metadataChange.setName("amount");
+    metadataChange.setRename("amount_decimal");
+    metadataChange.setType("BigNumber");
+    metadataChange.setLength(18);
+    metadataChange.setPrecision(4);
+    metadataChange.setConversionMask("#,##0.0000");
+    metadataChange.setDecimalSymbol(".");
+    metadataChange.setGroupingSymbol(",");
+
     SelectOptions options = new SelectOptions();
     options.setSelectFields(List.of(selected));
     options.setSelectingAndSortingUnspecifiedFields(true);
     options.setDeleteName(List.of(removed));
+    options.setMeta(List.of(metadataChange));
 
     SelectValuesMeta meta = new SelectValuesMeta();
     meta.setSelectOption(options);
@@ -50,6 +61,8 @@ class SelectValuesConfigJsonTest {
     assertEquals("customer_id", json.get("fields").get("field").get(0).get("name").asText());
     assertEquals("id", json.get("fields").get("field").get(0).get("rename").asText());
     assertEquals("internal_note", json.get("fields").get("remove").get(0).get("name").asText());
+    assertEquals("amount", json.get("fields").get("meta").get(0).get("name").asText());
+    assertEquals("BigNumber", json.get("fields").get("meta").get(0).get("type").asText());
     assertTrue(json.get("fields").get("select_unspecified").asBoolean());
 
     SelectValuesMeta restored = ConfigJsonSerializer.fromJson(json, SelectValuesMeta.class);
@@ -63,5 +76,15 @@ class SelectValuesConfigJsonTest {
     assertEquals(0, restoredField.getPrecision());
     assertEquals(1, restored.getSelectOption().getDeleteName().size());
     assertEquals("internal_note", restored.getSelectOption().getDeleteName().get(0).getName());
+    assertEquals(1, restored.getSelectOption().getMeta().size());
+    SelectMetadataChange restoredMetadata = restored.getSelectOption().getMeta().get(0);
+    assertEquals("amount", restoredMetadata.getName());
+    assertEquals("amount_decimal", restoredMetadata.getRename());
+    assertEquals("BigNumber", restoredMetadata.getType());
+    assertEquals(18, restoredMetadata.getLength());
+    assertEquals(4, restoredMetadata.getPrecision());
+    assertEquals("#,##0.0000", restoredMetadata.getConversionMask());
+    assertEquals(".", restoredMetadata.getDecimalSymbol());
+    assertEquals(",", restoredMetadata.getGroupingSymbol());
   }
 }
