@@ -24,27 +24,40 @@ import org.apache.hop.pipeline.transform.TransformMeta;
 
 /** Stable, UI-independent graph projection of a pipeline document. */
 public final class PipelineGraphProjection {
+  private static final String TRANSFORM_KIND = "transform";
+
   private PipelineGraphProjection() {}
 
   public static Graph project(PipelineMeta pipelineMeta) {
     Objects.requireNonNull(pipelineMeta, "pipelineMeta");
-    List<Node> nodes = pipelineMeta.getTransforms().stream().map(PipelineGraphProjection::node).toList();
-    List<Edge> edges = pipelineMeta.getPipelineHops().stream().map(PipelineGraphProjection::edge).toList();
+    List<Node> nodes =
+        pipelineMeta.getTransforms().stream().map(PipelineGraphProjection::node).toList();
+    List<Edge> edges =
+        pipelineMeta.getPipelineHops().stream().map(PipelineGraphProjection::edge).toList();
     return new Graph(nodes, edges);
   }
 
   private static Node node(TransformMeta transform) {
     return new Node(
-        transform.getName(), transform.getLocation().x, transform.getLocation().y, transform.isSelected());
+        transform.getName(),
+        transform.getName(),
+        TRANSFORM_KIND,
+        transform.getTransformPluginId(),
+        TRANSFORM_KIND,
+        transform.getLocation().x,
+        transform.getLocation().y);
   }
 
   private static Edge edge(PipelineHopMeta hop) {
-    return new Edge(hop.getFromTransform().getName(), hop.getToTransform().getName(), hop.isEnabled());
+    String source = hop.getFromTransform().getName();
+    String target = hop.getToTransform().getName();
+    return new Edge(source + "->" + target, source, target, hop.isEnabled());
   }
 
   public record Graph(List<Node> nodes, List<Edge> edges) {}
 
-  public record Node(String id, int x, int y, boolean selected) {}
+  public record Node(
+      String id, String name, String kind, String pluginId, String pluginType, int x, int y) {}
 
-  public record Edge(String from, String to, boolean enabled) {}
+  public record Edge(String id, String source, String target, boolean enabled) {}
 }
