@@ -36,7 +36,7 @@ class PipelineEditorTest {
 
     assertEquals(true, editor.addTransform(third));
     assertEquals(third, pipeline.findTransform("third"));
-    assertEquals(ChangeAction.ActionType.NewTransform, pipeline.previousUndo().getType());
+    assertEquals(ChangeAction.ActionType.NewTransform, pipeline.viewPreviousUndo().getType());
     assertEquals(true, editor.undo());
     assertEquals(null, pipeline.findTransform("third"));
     assertEquals(true, editor.redo());
@@ -200,13 +200,15 @@ class PipelineEditorTest {
     assertEquals(
         true,
         pipeline
-            .findPipelineHop(pipeline.findTransform("first"), pipeline.findTransform("second"))
+            .findPipelineHop(
+                pipeline.findTransform("first"), pipeline.findTransform("second"), true)
             .isEnabled());
     assertEquals(true, editor.redo());
     assertEquals(
         false,
         pipeline
-            .findPipelineHop(pipeline.findTransform("first"), pipeline.findTransform("second"))
+            .findPipelineHop(
+                pipeline.findTransform("first"), pipeline.findTransform("second"), true)
             .isEnabled());
   }
 
