@@ -30,8 +30,8 @@ class PipelineGraphProjectionTest {
   @Test
   void projectsCommandMutationsAndRemainsStableAfterReload() throws Exception {
     PipelineMeta pipeline = new PipelineMeta();
-    pipeline.addTransform(transform("first", 10, 20));
-    pipeline.addTransform(transform("second", 30, 40));
+    pipeline.addTransform(transform("first", "MockFirst", 10, 20));
+    pipeline.addTransform(transform("second", "MockSecond", 30, 40));
     pipeline.clearUndo();
     pipeline.clearChanged();
 
@@ -43,9 +43,13 @@ class PipelineGraphProjectionTest {
     PipelineGraphProjection.Graph expected =
         new PipelineGraphProjection.Graph(
             List.of(
-                new PipelineGraphProjection.Node("first", 35, 35, false),
-                new PipelineGraphProjection.Node("second", 30, 40, false)),
-            List.of(new PipelineGraphProjection.Edge("first", "second", false)));
+                new PipelineGraphProjection.Node(
+                    "first", "first", "transform", "MockFirst", "transform", 35, 35),
+                new PipelineGraphProjection.Node(
+                    "second", "second", "transform", "MockSecond", "transform", 30, 40)),
+            List.of(
+                new PipelineGraphProjection.Edge(
+                    "first->second", "first", "second", false)));
     assertEquals(expected, PipelineGraphProjection.project(pipeline));
 
     Variables variables = new Variables();
@@ -57,9 +61,10 @@ class PipelineGraphProjectionTest {
     assertEquals(expected, PipelineGraphProjection.project(reloaded));
   }
 
-  private static TransformMeta transform(String name, int x, int y) {
+  private static TransformMeta transform(String name, String pluginId, int x, int y) {
     TransformMeta transform = new TransformMeta();
     transform.setName(name);
+    transform.setTransformPluginId(pluginId);
     transform.setLocation(x, y);
     return transform;
   }
