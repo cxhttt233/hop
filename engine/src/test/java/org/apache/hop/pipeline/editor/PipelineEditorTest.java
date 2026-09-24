@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.List;
 import org.apache.hop.core.gui.Point;
 import org.apache.hop.core.undo.ChangeAction;
+import org.apache.hop.core.variables.Variables;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
 import org.apache.hop.pipeline.PipelineHopMeta;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -210,6 +213,30 @@ class PipelineEditorTest {
             .findPipelineHop(
                 pipeline.findTransform("first"), pipeline.findTransform("second"), true)
             .isEnabled());
+  }
+
+  @Test
+  void commandMutationRoundTripsThroughPipelineXml() throws Exception {
+    PipelineMeta pipeline = pipelineWithTwoTransforms();
+    PipelineEditor editor = new PipelineEditor(pipeline);
+    assertEquals(1, editor.moveTransforms(List.of("first"), 25, 15));
+    assertNotNull(editor.addHop("first", "second"));
+    assertEquals(true, editor.setHopEnabled("first", "second", false));
+
+    Variables variables = new Variables();
+    String xml = pipeline.getXml(variables);
+    PipelineMeta reloaded =
+        new PipelineMeta(
+            XmlHandler.loadXmlString(xml, PipelineMeta.XML_TAG), new MemoryMetadataProvider());
+
+    assertEquals(new Point(35, 35), reloaded.findTransform("first").getLocation());
+    assertEquals(new Point(30, 40), reloaded.findTransform("second").getLocation());
+    PipelineHopMeta reloadedHop =
+        reloaded.findPipelineHop(
+            reloaded.findTransform("first"), reloaded.findTransform("second"), true);
+    assertNotNull(reloadedHop);
+    assertEquals(false, reloadedHop.isEnabled());
+    assertEquals(xml, reloaded.getXml(variables));
   }
 
   @Test
