@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import org.apache.hop.core.NotePadMeta;
 import org.apache.hop.core.variables.Variables;
 import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
@@ -69,6 +70,22 @@ class PipelineGraphProjectionTest {
     assertTrue(editor.undo());
     assertEquals(connected, PipelineGraphProjection.project(pipeline));
     assertEquals(connected, PipelineGraphProjection.project(reload(pipeline)));
+  }
+
+  @Test
+  void projectsNotesAndPreservesThemAcrossReload() throws Exception {
+    PipelineMeta pipeline = new PipelineMeta();
+    pipeline.getNotes().add(new NotePadMeta("Remember this", 120, 80, 240, 100));
+
+    PipelineGraphProjection.Graph expected =
+        new PipelineGraphProjection.Graph(
+            List.of(
+                new PipelineGraphProjection.Node(
+                    "note:0", "Remember this", "note", null, null, 120, 80)),
+            List.of());
+
+    assertEquals(expected, PipelineGraphProjection.project(pipeline));
+    assertEquals(expected, PipelineGraphProjection.project(reload(pipeline)));
   }
 
   private static PipelineMeta reload(PipelineMeta pipeline) throws Exception {
