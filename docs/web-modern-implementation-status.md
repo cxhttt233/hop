@@ -25,6 +25,40 @@
 - Apache Hop baseline：`f7c2694a0b66a151eb244a7e9c11beff46b18421`
 - PoC integration branch：`experiment/web-modern-poc`
 
+## 2026-09-24 Product Refocus
+
+项目主线已调整为 **React 原生浏览器编辑器优先**。
+
+### Goal
+`real .hpl → Graph JSON → React Flow → semantic edit → React config/metadata → save/reload`
+
+### Repository Strategy
+- 计划新建 standalone 产品仓库：`cxhttt233/hop-modern-web`。
+- standalone repo 不复制 Apache Hop 全量源码。
+- `cxhttt233/hop` fork 继续作为 Hop 引擎基线、必要 core/engine patch 和兼容验证源。
+
+### Asset Classification
+**Keep / reuse**
+- T1 WebSessionScope / minimal web carrier
+- T2 commands / undo
+- T3 Config JSON / Schema
+- T4 Execution domain
+
+**Current priority**
+- T2 Graph Projection JSON + save/reload
+- T3 Config/Metadata Web contract
+- T4 React + React Flow + native config/metadata UI
+- T1 only fills blockers needed by the vertical slice
+
+**Deferred**
+- further Execution SSE/reconnect/metrics
+- deep Project/Environment/VFS infrastructure not used by the current UI
+- server SVG as primary canvas
+- plugin Web UI long tail
+
+### Product Gate
+Phase 0 is not complete until a user can edit a real Pipeline in React without entering RAP `/ui`, configure at least one real Transform and one Metadata type, save/reload, and keep Apache Hop compatibility.
+
 ## Stable Implementation Facts
 
 ### Task 1 — Web Foundation
