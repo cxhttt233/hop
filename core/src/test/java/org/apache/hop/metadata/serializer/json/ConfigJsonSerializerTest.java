@@ -19,12 +19,18 @@ package org.apache.hop.metadata.serializer.json;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.hop.core.encryption.ITwoWayPasswordEncoder;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IEnumHasCode;
+import org.apache.hop.metadata.api.IHopMetadata;
+import org.apache.hop.metadata.api.IHopMetadataProvider;
+import org.apache.hop.metadata.api.IHopMetadataSerializer;
 import org.junit.jupiter.api.Test;
 
 class ConfigJsonSerializerTest {
@@ -66,6 +72,44 @@ class ConfigJsonSerializerTest {
     assertEquals(true, restored.enabled);
   }
 
+  @Test
+  void roundTripsPasswordUsingProviderEncoder() throws Exception {
+    IHopMetadataProvider provider = mock(IHopMetadataProvider.class);
+    ITwoWayPasswordEncoder encoder = mock(ITwoWayPasswordEncoder.class);
+    when(provider.getTwoWayPasswordEncoder()).thenReturn(encoder);
+    when(encoder.encode("secret", true)).thenReturn("Encrypted secret");
+    when(encoder.decode("Encrypted secret", true)).thenReturn("secret");
+
+    SensitiveConfig config = new SensitiveConfig();
+    config.password = "secret";
+
+    ObjectNode json = ConfigJsonSerializer.toJson(config, provider);
+    SensitiveConfig restored = ConfigJsonSerializer.fromJson(json, SensitiveConfig.class, provider);
+
+    assertEquals("Encrypted secret", json.get("password").asText());
+    assertEquals("secret", restored.password);
+  }
+
+  @Test
+  void resolvesNamedMetadataReferenceUsingProviderSerializer() throws Exception {
+    IHopMetadataProvider provider = mock(IHopMetadataProvider.class);
+    @SuppressWarnings("unchecked")
+    IHopMetadataSerializer<NamedMetadata> serializer = mock(IHopMetadataSerializer.class);
+    NamedMetadata referenced = new NamedMetadata("connection-a");
+    when(provider.getSerializer(NamedMetadata.class)).thenReturn(serializer);
+    when(serializer.load("connection-a")).thenReturn(referenced);
+
+    NamedReferenceConfig config = new NamedReferenceConfig();
+    config.reference = referenced;
+
+    ObjectNode json = ConfigJsonSerializer.toJson(config, provider);
+    NamedReferenceConfig restored =
+        ConfigJsonSerializer.fromJson(json, NamedReferenceConfig.class, provider);
+
+    assertEquals("connection-a", json.get("reference").asText());
+    assertEquals(referenced, restored.reference);
+  }
+
   static class SampleConfig {
     @HopMetadataProperty(key = "file_name")
     String name;
@@ -80,6 +124,63 @@ class ConfigJsonSerializerTest {
     String ignored;
 
     SampleConfig() {}
+  }
+
+  static class SensitiveConfig {
+    @HopMetadataProperty(password = true)
+    String password;
+  }
+
+  static class NamedReferenceConfig {
+    @HopMetadataProperty(storeWithName = true)
+    NamedMetadata reference;
+  }
+
+  static class NamedMetadata implements IHopMetadata {
+    private String name;
+    private String metadataProviderName;
+    private String virtualPath;
+
+    NamedMetadata() {}
+
+    NamedMetadata(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String getMetadataProviderName() {
+      return metadataProviderName;
+    }
+
+    @Override
+    public void setMetadataProviderName(String metadataProviderName) {
+      this.metadataProviderName = metadataProviderName;
+    }
+
+    @Override
+    public String getVirtualPath() {
+      return virtualPath;
+    }
+
+    @Override
+    public void setVirtualPath(String virtualPath) {
+      this.virtualPath = virtualPath;
+    }
+
+    @Override
+    public String getFullName() {
+      return name;
+    }
   }
 
   static class Item {
