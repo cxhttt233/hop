@@ -123,6 +123,20 @@ public final class ConfigJsonSerializer {
       }
       return array;
     }
+    if (value instanceof Map<?, ?> map) {
+      Class<?>[] types = mapTypes(field);
+      if (!String.class.equals(types[0]) || !String.class.equals(types[1])) {
+        throw new HopException(
+            "Config map property '" + field.getName() + "' only supports Map<String, String>");
+      }
+      ObjectNode object = MAPPER.createObjectNode();
+      for (Map.Entry<?, ?> entry : map.entrySet()) {
+        if (entry.getKey() != null) {
+          object.put((String) entry.getKey(), (String) entry.getValue());
+        }
+      }
+      return object;
+    }
     if (property.storeWithName()) {
       return MAPPER.valueToTree(ReflectionUtil.getObjectName(value));
     }
@@ -160,7 +174,8 @@ public final class ConfigJsonSerializer {
       wrapper.set(id, properties);
       return wrapper;
     } catch (Exception e) {
-      throw new HopException("Unable to serialize factory-backed config object " + declaredType.getName(), e);
+      throw new HopException(
+          "Unable to serialize factory-backed config object " + declaredType.getName(), e);
     }
   }
 
@@ -253,6 +268,16 @@ public final class ConfigJsonSerializer {
       }
       return values;
     }
+    if (Map.class.equals(type)) {
+      Class<?>[] types = mapTypes(field);
+      if (!String.class.equals(types[0]) || !String.class.equals(types[1])) {
+        throw new HopException(
+            "Config map property '" + field.getName() + "' only supports Map<String, String>");
+      }
+      java.util.HashMap<String, String> values = new java.util.HashMap<>();
+      node.fields().forEachRemaining(entry -> values.put(entry.getKey(), entry.getValue().asText()));
+      return values;
+    }
     return readPojo(node, type, metadataProvider);
   }
 
@@ -268,7 +293,9 @@ public final class ConfigJsonSerializer {
       } else {
         if (!node.isObject() || node.size() != 1) {
           throw new HopException(
-              "Factory-backed config property " + declaredType.getName() + " must contain one object id");
+              "Factory-backed config property "
+                  + declaredType.getName()
+                  + " must contain one object id");
         }
         Map.Entry<String, JsonNode> entry = node.fields().next();
         IHopMetadataObjectFactory factory =
@@ -290,9 +317,20 @@ public final class ConfigJsonSerializer {
       throw new HopException("Config list property '" + field.getName() + "' has no item type");
     }
     if (!(parameterizedType.getActualTypeArguments()[0] instanceof Class<?> itemType)) {
-      throw new HopException("Config list property '" + field.getName() + "' has unsupported item type");
+      throw new HopException(
+          "Config list property '" + field.getName() + "' has unsupported item type");
     }
     return itemType;
+  }
+
+  private static Class<?>[] mapTypes(Field field) throws HopException {
+    if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)
+        || parameterizedType.getActualTypeArguments().length != 2
+        || !(parameterizedType.getActualTypeArguments()[0] instanceof Class<?> keyType)
+        || !(parameterizedType.getActualTypeArguments()[1] instanceof Class<?> valueType)) {
+      throw new HopException("Config map property '" + field.getName() + "' has unsupported types");
+    }
+    return new Class<?>[] {keyType, valueType};
   }
 
   @SuppressWarnings("unchecked")
