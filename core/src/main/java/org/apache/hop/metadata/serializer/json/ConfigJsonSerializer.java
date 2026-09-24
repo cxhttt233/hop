@@ -84,7 +84,8 @@ public final class ConfigJsonSerializer {
       String key = key(property, field);
       try {
         Object fieldValue = ReflectionUtil.getFieldValue(value, field.getName(), isBoolean(field));
-        result.set(key, writeValue(fieldValue, field, property, metadataProvider));
+        ObjectNode target = group(result, property, true);
+        target.set(key, writeValue(fieldValue, field, property, metadataProvider));
       } catch (Exception e) {
         throw new HopException("Unable to serialize config property '" + key + "'", e);
       }
@@ -128,7 +129,10 @@ public final class ConfigJsonSerializer {
       return MAPPER.valueToTree(enumValue.name());
     }
     if (value instanceof String stringValue && property.password()) {
-      return MAPPER.valueToTree(requireProvider(metadataProvider, field).getTwoWayPasswordEncoder().encode(stringValue, true));
+      return MAPPER.valueToTree(
+          requireProvider(metadataProvider, field)
+              .getTwoWayPasswordEncoder()
+              .encode(stringValue, true));
     }
     if (value instanceof String || value instanceof Number || value instanceof Boolean) {
       return MAPPER.valueToTree(value);
@@ -147,7 +151,8 @@ public final class ConfigJsonSerializer {
         continue;
       }
       String key = key(property, field);
-      JsonNode node = json.get(key);
+      JsonNode container = group(json, property);
+      JsonNode node = container == null ? null : container.get(key);
       if (node == null) {
         if (isBoolean(field)) {
           set(target, field, property.defaultBoolean());
@@ -175,7 +180,10 @@ public final class ConfigJsonSerializer {
     if (String.class.equals(type)) {
       String value = node.asText();
       if (property.password()) {
-        value = requireProvider(metadataProvider, field).getTwoWayPasswordEncoder().decode(value, true);
+        value =
+            requireProvider(metadataProvider, field)
+                .getTwoWayPasswordEncoder()
+                .decode(value, true);
       }
       return value;
     }
@@ -245,10 +253,7 @@ public final class ConfigJsonSerializer {
 
   @SuppressWarnings("unchecked")
   private static Object loadNamedReference(
-      String name,
-      Class<?> type,
-      IHopMetadataProvider metadataProvider,
-      Field field)
+      String name, Class<?> type, IHopMetadataProvider metadataProvider, Field field)
       throws HopException {
     IHopMetadataProvider provider = requireProvider(metadataProvider, field);
     if (!IHopMetadata.class.isAssignableFrom(type)) {
@@ -272,6 +277,26 @@ public final class ConfigJsonSerializer {
               + "' requires an IHopMetadataProvider for transport semantics");
     }
     return metadataProvider;
+  }
+
+  private static ObjectNode group(ObjectNode root, HopMetadataProperty property, boolean create) {
+    if (StringUtils.isEmpty(property.groupKey())) {
+      return root;
+    }
+    JsonNode existing = root.get(property.groupKey());
+    if (existing instanceof ObjectNode objectNode) {
+      return objectNode;
+    }
+    if (!create) {
+      return null;
+    }
+    ObjectNode objectNode = MAPPER.createObjectNode();
+    root.set(property.groupKey(), objectNode);
+    return objectNode;
+  }
+
+  private static JsonNode group(JsonNode root, HopMetadataProperty property) {
+    return StringUtils.isEmpty(property.groupKey()) ? root : root.get(property.groupKey());
   }
 
   private static void set(Object target, Field field, Object value) throws HopException {
