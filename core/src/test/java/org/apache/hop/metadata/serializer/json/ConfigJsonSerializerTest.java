@@ -24,7 +24,9 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.hop.core.encryption.ITwoWayPasswordEncoder;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IEnumHasCode;
@@ -77,6 +79,19 @@ class ConfigJsonSerializerTest {
     assertEquals(2, restored.fields.size());
     assertEquals("second", restored.fields.get(1).name);
     assertEquals(2, restored.fields.get(1).ordinal);
+  }
+
+  @Test
+  void roundTripsStringMap() throws Exception {
+    MapConfig config = new MapConfig();
+    config.attributes.put("EXTRA_OPTION", "value");
+    config.attributes.put("PORT", "5432");
+
+    ObjectNode json = ConfigJsonSerializer.toJson(config);
+    MapConfig restored = ConfigJsonSerializer.fromJson(json, MapConfig.class);
+
+    assertEquals("value", json.get("attributes").get("EXTRA_OPTION").asText());
+    assertEquals(config.attributes, restored.attributes);
   }
 
   @Test
@@ -146,6 +161,10 @@ class ConfigJsonSerializerTest {
   static class GroupedConfig {
     @HopMetadataProperty(key = "field", groupKey = "fields")
     List<Item> fields = new ArrayList<>();
+  }
+
+  static class MapConfig {
+    @HopMetadataProperty Map<String, String> attributes = new HashMap<>();
   }
 
   static class SensitiveConfig {
