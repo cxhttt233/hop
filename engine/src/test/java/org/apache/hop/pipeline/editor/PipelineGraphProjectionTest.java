@@ -48,8 +48,7 @@ class PipelineGraphProjectionTest {
                     "first", "first", "transform", "MockFirst", "transform", 35, 35),
                 new PipelineGraphProjection.Node(
                     "second", "second", "transform", "MockSecond", "transform", 30, 40)),
-            List.of(
-                new PipelineGraphProjection.Edge("first->second", "first", "second", false)));
+            List.of(new PipelineGraphProjection.Edge("first->second", "first", "second", false)));
     assertEquals(expected, PipelineGraphProjection.project(pipeline));
     assertEquals(expected, PipelineGraphProjection.project(reload(pipeline)));
   }
