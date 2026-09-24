@@ -663,7 +663,7 @@
         <profile>
             <id>web-next</id>
             <modules>
-                <module>web/api</module>
+                <module>web</module>
             </modules>
         </profile>
         <profile>
