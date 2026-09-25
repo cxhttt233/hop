@@ -63,7 +63,7 @@ class DatabaseMetaConfigJsonSerializerTest {
     assertEquals("H2", restored.getPluginId());
     assertEquals("db.internal", restored.getHostname());
     assertEquals("orders", restored.getDatabaseName());
-    assertEquals("9092", restored.getDatabasePortNumberString());
+    assertEquals("9092", restored.getPort());
     assertEquals("hop", restored.getUsername());
     assertEquals("secret", restored.getPassword());
     assertEquals("enabled", restored.getIDatabase().getAttributes().get("CUSTOM_OPTION"));
