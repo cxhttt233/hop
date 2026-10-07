@@ -18,6 +18,7 @@
 package org.apache.hop.workflow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -231,9 +232,27 @@ class WorkflowTest {
       Thread runner = new Thread(engine::startExecution);
       runner.start();
       assertTrue(blockingEntered.await(30, TimeUnit.SECONDS));
+      assertTrue(engine.isInitialized());
+      assertTrue(engine.isActive());
+      assertFalse(engine.isStopped());
+      assertFalse(engine.isFinished());
+      assertEquals("Running", engine.getStatusDescription());
+      assertTrue(runner.isAlive());
+
       engine.stopExecution();
+      assertTrue(engine.isActive());
+      assertTrue(engine.isStopped());
+      assertFalse(engine.isFinished());
+      assertEquals("Halting", engine.getStatusDescription());
+      assertTrue(runner.isAlive());
+
       blockingRelease.countDown();
       runner.join(60000);
+      assertFalse(runner.isAlive());
+      assertFalse(engine.isActive());
+      assertTrue(engine.isStopped());
+      assertFalse(engine.isFinished());
+      assertEquals("Stopped", engine.getStatusDescription());
       assertTrue(engine.getResult().isStopped(), "Result should reflect user stop for rollback");
     } finally {
       blockingEntered = null;
